@@ -1,0 +1,8 @@
+# Vim related
+*.swp
+*.swo
+
+.byebug_history
+.ruby-version
+
+/codeme-common
