@@ -1,5 +1,6 @@
 require 'codeme/agent/connection'
 require 'codeme/agent/buzzer'
+require 'codeme/agent/card_reader'
 
 require 'thread'
 
@@ -18,6 +19,9 @@ module Codeme
           c.enable_log = true
         end
         @components[:buzzer] = create_component(Buzzer) do  |c|
+          c.enable_log = true
+        end
+        @components[:card_reader] = create_component(CardReader, self) do  |c|
           c.enable_log = true
         end
       end
