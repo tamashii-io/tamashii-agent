@@ -1,0 +1,28 @@
+GIT
+  remote: git@git.5xruby.tw:5xruby-codeme/codeme-common.git
+  revision: 147e6388155fc97a43750e89e57623736b56b6ff
+  specs:
+    codeme-common (0.1.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    byebug (9.0.6)
+    eventmachine (1.2.1)
+    nio4r (1.2.1)
+    websocket-driver (0.6.4)
+      websocket-extensions (>= 0.1.0)
+    websocket-extensions (0.1.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  byebug
+  codeme-common!
+  eventmachine
+  nio4r
+  websocket-driver
+
+BUNDLED WITH
+   1.13.6
