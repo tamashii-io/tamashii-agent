@@ -1,15 +1,31 @@
-GIT
-  remote: git@git.5xruby.tw:5xruby-codeme/codeme-common.git
-  revision: 147e6388155fc97a43750e89e57623736b56b6ff
+PATH
+  remote: .
   specs:
-    codeme-common (0.1.0)
+    codeme-agent (0.1.0)
+      codeme-common
+      nio4r
+      websocket-driver
 
 GEM
   remote: https://rubygems.org/
   specs:
-    byebug (9.0.6)
-    eventmachine (1.2.1)
+    codeme-common (0.1.0)
+    diff-lcs (1.2.5)
     nio4r (1.2.1)
+    rake (10.5.0)
+    rspec (3.5.0)
+      rspec-core (~> 3.5.0)
+      rspec-expectations (~> 3.5.0)
+      rspec-mocks (~> 3.5.0)
+    rspec-core (3.5.4)
+      rspec-support (~> 3.5.0)
+    rspec-expectations (3.5.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.5.0)
+    rspec-mocks (3.5.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.5.0)
+    rspec-support (3.5.0)
     websocket-driver (0.6.4)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.2)
@@ -18,11 +34,10 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  byebug
-  codeme-common!
-  eventmachine
-  nio4r
-  websocket-driver
+  bundler (~> 1.13)
+  codeme-agent!
+  rake (~> 10.0)
+  rspec (~> 3.0)
 
 BUNDLED WITH
    1.13.6

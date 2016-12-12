@@ -5,4 +5,13 @@
 .byebug_history
 .ruby-version
 
-/codeme-common
+# Gem
+/.bundle/
+/.yardoc
+/Gemfile.lock
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
