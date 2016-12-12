@@ -45,6 +45,14 @@ module Codeme
         end
       end
 
+      # override
+      def stop
+        super
+        @components.each_value do |c|
+          c.stop
+        end
+      end
+
 
       def broadcast_event(ev_type, ev_body)
         @components.each_value do |c|

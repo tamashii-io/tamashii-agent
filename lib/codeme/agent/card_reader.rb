@@ -23,7 +23,7 @@ module Codeme
       end
 
       def handle_card
-        if Time.now - @last_time > 1.0
+        if Time.now - @last_time > 5.0
           @last_time = Time.now
           @master.send_event(EVENT_CARD_DATA, "New Card At #{Time.now}")
         end

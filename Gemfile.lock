@@ -4,6 +4,7 @@ PATH
     codeme-agent (0.1.0)
       codeme-common
       nio4r
+      pi_piper
       websocket-driver
 
 GEM
@@ -11,7 +12,12 @@ GEM
   specs:
     codeme-common (0.1.0)
     diff-lcs (1.2.5)
+    eventmachine (1.0.9)
+    ffi (1.9.14)
     nio4r (1.2.1)
+    pi_piper (2.0.0)
+      eventmachine (= 1.0.9)
+      ffi
     rake (10.5.0)
     rspec (3.5.0)
       rspec-core (~> 3.5.0)

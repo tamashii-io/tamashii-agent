@@ -46,8 +46,13 @@ module Codeme
       end
       
       def stop
+        log "Stopping"
         @thr.exit if @thr
         @thr = nil
+        clean_up
+      end
+
+      def clean_up
       end
 
       def run_worker_loop
