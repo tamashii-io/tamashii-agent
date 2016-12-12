@@ -1,7 +1,6 @@
 require 'socket'
 
 require 'websocket/driver'
-require 'nio'
 require 'codeme/packet'
 
 require 'codeme/agent/component'
@@ -19,21 +18,8 @@ module Codeme
         @port = port
       end
 
-      def run
-        @thr = Thread.start { worker_loop }
-      end
-
-      def stop
-        @thr.exit if @thr
-        @thr = nil
-      end
-
+      # override
       def worker_loop
-        @selector = NIO::Selector.new
-
-        # Event IO
-        register_event_io
-
         loop do
           ready = @selector.select(1)
           ready.each { |m| m.value.call } if ready
@@ -64,11 +50,6 @@ module Codeme
           process_packet(pkt)
         }
         @driver.start
-      end
-
-      def register_event_io
-        _monitor = @selector.register(@pipe_r, :r)
-        _monitor.value = method(:receive_event)
       end
 
       def register_socket_io
@@ -108,14 +89,17 @@ module Codeme
       end
 
       def process_packet(pkt)
-        @master.send_event(pkt.type + 1, "Got packet: #{pkt.type}: #{pkt.body}")
+        @master.send_event(EVENT_BEEP, "Got packet: #{pkt.type}: #{pkt.body}")
       end
 
       def process_event(ev_type, ev_body)
-        if @ready
-          @driver.text(Packet.new(ev_type, ev_body).dump)
-        else
-          @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready")
+        case ev_type
+        when EVENT_CARD_DATA
+          if @ready
+            @driver.text(Packet.new(ev_type, ev_body).dump)
+          else
+            @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready")
+          end
         end
       end
     end

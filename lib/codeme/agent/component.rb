@@ -1,3 +1,4 @@
+require 'nio'
 module Codeme
   module Agent
     class Component
@@ -33,6 +34,43 @@ module Codeme
 
       def log(msg)
         puts "[#{self.class}] #{msg}" if @enable_log
+      end
+
+      # worker
+      def run
+        @thr = Thread.start { run_worker_loop }
+      end
+
+      def run!
+        run_worker_loop
+      end
+      
+      def stop
+        @thr.exit if @thr
+        @thr = nil
+      end
+
+      def run_worker_loop
+        create_selector
+        register_event_io
+        worker_loop
+      end
+
+      # a default implementation
+      def worker_loop
+        loop do
+          ready = @selector.select
+          ready.each { |m| m.value.call } if ready
+        end
+      end
+      
+      def register_event_io
+        _monitor = @selector.register(@pipe_r, :r)
+        _monitor.value = method(:receive_event)
+      end
+
+      def create_selector
+        @selector = NIO::Selector.new
       end
     end
   end
