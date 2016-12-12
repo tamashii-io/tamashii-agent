@@ -3,6 +3,7 @@ PATH
   specs:
     codeme-agent (0.1.0)
       codeme-common
+      mfrc522
       nio4r
       pi_piper
       websocket-driver
@@ -14,6 +15,8 @@ GEM
     diff-lcs (1.2.5)
     eventmachine (1.0.9)
     ffi (1.9.14)
+    mfrc522 (1.0.2)
+      pi_piper (~> 2.0.0, >= 2.0.0)
     nio4r (1.2.1)
     pi_piper (2.0.0)
       eventmachine (= 1.0.9)

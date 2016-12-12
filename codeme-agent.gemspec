@@ -38,4 +38,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "websocket-driver"
   spec.add_runtime_dependency "nio4r"
   spec.add_runtime_dependency "pi_piper"
+  spec.add_runtime_dependency "mfrc522"
 end

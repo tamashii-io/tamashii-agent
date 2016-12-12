@@ -89,7 +89,7 @@ module Codeme
       end
 
       def process_packet(pkt)
-        @master.send_event(EVENT_BEEP, "Got packet: #{pkt.type}: #{pkt.body}")
+        @master.send_event(EVENT_BEEP, ["ok", "no"].sample)
       end
 
       def process_event(ev_type, ev_body)

@@ -39,7 +39,7 @@ module Codeme
         case ev_type
         when EVENT_SYSTEM_COMMAND
         when EVENT_CONNECTION_NOT_READY
-          broadcast_event(EVENT_BEEP, "Not Ready")
+          broadcast_event(EVENT_BEEP, "error")
         else
           broadcast_event(ev_type, ev_body)
         end

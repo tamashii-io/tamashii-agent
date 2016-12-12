@@ -13,7 +13,14 @@ module Codeme
         case ev_type
         when EVENT_BEEP
           log "Beep: #{ev_body}"
-          PIBuzzer.play_ok
+          case ev_body
+          when "ok"
+            PIBuzzer.play_ok
+          when "no"
+            PIBuzzer.play_no
+          when "error"
+            PIBuzzer.play_error
+          end
         end
       end
 

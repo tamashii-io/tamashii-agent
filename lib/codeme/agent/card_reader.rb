@@ -1,3 +1,5 @@
+require 'mfrc522'
+
 require 'codeme/agent/component'
 
 module Codeme
@@ -6,7 +8,7 @@ module Codeme
       def initialize(master)
         super()
         @master = master
-        @last_time = Time.now
+        @reader = MFRC522.new
       end
 
       # override
@@ -18,15 +20,27 @@ module Codeme
       end
 
       def handle_io
-        ready = @selector.select(0.5)
+        ready = @selector.select(0.1)
         ready.each { |m| m.value.call } if ready
       end
 
       def handle_card
-        if Time.now - @last_time > 5.0
-          @last_time = Time.now
-          @master.send_event(EVENT_CARD_DATA, "New Card At #{Time.now}")
+        # read card
+        return unless @reader.picc_request(MFRC522::PICC_REQA)
+
+        begin
+          uid, sak = @reader.picc_select
+          process_uid(uid.join("-"))
+        rescue CommunicationError, UnexpectedDataError => e
+          log "Error selecting card: #{e.message}"
         end
+
+        log "picc halt #{@reader.picc_halt}"
+      end
+
+      def process_uid(uid)
+        log "New card detected, UID: #{uid}"
+        @master.send_event(EVENT_CARD_DATA, uid)
       end
 
       # override
