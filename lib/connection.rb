@@ -1,11 +1,11 @@
-$LOAD_PATH << "#{File.dirname(__FILE__)}/codeme-common/lib"
 $LOAD_PATH << "#{File.dirname(__FILE__)}/lib"
+require 'socket'
+
+require 'websocket/driver'
+require 'nio'
+require 'codeme/packet'
 
 require 'component'
-require 'packet'
-require 'websocket/driver'
-require 'socket'
-require 'nio'
 
 module Codeme
   class Connection < Component
@@ -28,29 +28,11 @@ module Codeme
       @thr = nil
     end
 
-    def create_socket
-      until @io
-        @io = TCPSocket.new(@host, @port) rescue nil
-        unless @io
-          log "TCP Connection Error, retrying..."
-          sleep 1
-        end
-      end
-    end
-
     def worker_loop
-      # Socket
-      create_socket
-      
       @selector = NIO::Selector.new
-      # Socket IO
-      register_socket_io
       
       # Event IO
       register_event_io
-      
-      # WS driver
-      start_web_driver
       
       loop do
         ready = @selector.select(1)
@@ -58,8 +40,9 @@ module Codeme
         if @io.nil?
           @io = try_create_socket
           if @io
-            # io re-opened
+            # socket io opened
             register_socket_io
+            # start ws
             start_web_driver
           end
         end

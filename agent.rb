@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-$LOAD_PATH << "#{File.dirname(__FILE__)}/codeme-common/lib"
 $LOAD_PATH << "#{File.dirname(__FILE__)}/lib"
 
 Thread.abort_on_exception = true
@@ -18,7 +17,7 @@ module Codeme
       @selector = NIO::Selector.new
       @selector.register(@pipe_r, :r)
 
-      @c.enable_log = false
+      @c.enable_log = true
     end
 
     def run
