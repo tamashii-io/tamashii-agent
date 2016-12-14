@@ -4,6 +4,7 @@ require 'websocket/driver'
 require 'codeme/packet'
 
 require 'codeme/agent/component'
+require 'codeme/agent/request_pool'
 
 module Codeme
   module Agent
@@ -16,11 +17,34 @@ module Codeme
         @ready = false
         @host = host
         @port = port
+        @request_pool = RequestPool.new
+        @request_pool.on_request_timedout = method(:handle_request_timedout)
+        @request_pool.on_request_meet = method(:handle_request_meet)
+        @request_pool.on_send_request = method(:handle_send_request)
+      end
+
+      def handle_request_timedout(req)
+        @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready for #{req.ev_type}:#{req.ev_body}")
+      end
+
+      def handle_request_meet(req, res)
+        log "Got packet: #{res.ev_type}: #{res.ev_body}"
+        @master.send_event(EVENT_BEEP, ["ok", "no"].sample)
+      end
+
+      def handle_send_request(req)
+        if @ready
+          @driver.text(Packet.new(ev_type, ev_body).dump)
+          true
+        else
+          false
+        end
       end
 
       # override
       def worker_loop
         loop do
+          @request_pool.update
           ready = @selector.select(1)
           ready.each { |m| m.value.call } if ready
           if @io.nil?
@@ -89,12 +113,16 @@ module Codeme
       end
 
       def process_packet(pkt)
-        @master.send_event(EVENT_BEEP, ["ok", "no"].sample)
+        # TODO: check packet type
+        # if packet is CARD_RESULT
+        @request_pool.add_response(Response.new(pkt.type, pkt.body))
       end
 
       def process_event(ev_type, ev_body)
         case ev_type
         when EVENT_CARD_DATA
+          req = Request.new(ev_type, ev_body)
+          @request_pool.add_request(req)
           if @ready
             @driver.text(Packet.new(ev_type, ev_body).dump)
           else
