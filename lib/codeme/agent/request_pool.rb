@@ -12,14 +12,10 @@ module Codeme
       STATE_PENDING = :pending
       STATE_SENT = :sent
 
-      def self.reset_request_id
-        @@request_id = 0
-      end
-
-      def initialize(ev_type, ev_body)
+      def initialize(ev_type, ev_body, id)
         @ev_type = ev_type
         @ev_body = ev_body
-        @id = @@request_id += 1
+        @id = id
         @state = STATE_PENDING
       end
 
@@ -45,8 +41,8 @@ module Codeme
       def initialize(ev_type, wrapped_body)
         @ev_type = ev_type
         data = JSON.parse(wrapped_body)
-        @id = data[:id]
-        @ev_body = data[:ev_body]
+        @id = data["id"]
+        @ev_body = data["ev_body"]
       end
       
     end
@@ -62,7 +58,6 @@ module Codeme
         @on_request_timedout = nil
         @on_request_meet = nil
         @on_send_request = nil
-        Request.reset_request_id
       end
 
       def add_request(req, timedout = 3)
@@ -92,7 +87,7 @@ module Codeme
       
       def check_timedout
         now = Time.now
-        @pool.ech do |id, req_data|
+        @pool.each do |id, req_data|
           if now - req_data[:timestamp] >= req_data[:timedout]
             # timedout
             @pool.delete(id)

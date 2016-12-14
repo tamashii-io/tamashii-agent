@@ -8,14 +8,16 @@ module Codeme
   module Agent
     class Master < Component
 
-      def initialize
-        super
+      def initialize(host, port)
+        super()
+        @host = host
+        @port = port
         create_components
       end
 
       def create_components
         @components = {}
-        @components[:connection] = create_component(Connection, self, "127.0.0.1", 4180) do  |c|
+        @components[:connection] = create_component(Connection, self, @host, @port) do  |c|
           c.enable_log = true
         end
         @components[:buzzer] = create_component(Buzzer) do  |c|

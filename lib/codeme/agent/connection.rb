@@ -1,7 +1,7 @@
 require 'socket'
 
 require 'websocket/driver'
-require 'codeme/packet'
+require 'codeme/common'
 
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
@@ -34,7 +34,7 @@ module Codeme
 
       def handle_send_request(req)
         if @ready
-          @driver.text(Packet.new(ev_type, ev_body).dump)
+          @driver.text(Packet.new(req.ev_type, req.wrap_body).dump)
           true
         else
           false
@@ -121,13 +121,8 @@ module Codeme
       def process_event(ev_type, ev_body)
         case ev_type
         when EVENT_CARD_DATA
-          req = Request.new(ev_type, ev_body)
+          req = Request.new(ev_type, ev_body, ev_body)
           @request_pool.add_request(req)
-          if @ready
-            @driver.text(Packet.new(ev_type, ev_body).dump)
-          else
-            @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready")
-          end
         end
       end
     end
