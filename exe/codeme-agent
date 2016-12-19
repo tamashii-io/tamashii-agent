@@ -6,9 +6,6 @@ require 'codeme/agent'
 options = {
   port: 3000,
   host: "localhost",
-  use_ssl: false,
-  log_file: nil,
-
 }
 
 OptionParser.new do |opts|
@@ -40,7 +37,7 @@ begin
   when :token
     raise LoadError.new("Token authorization require to set token") if config.token.nil?
   end
-  agent = Codeme::Agent::Master.new
+  agent = Codeme::Agent::Master.new(options[:host], options[:port])
   agent.run!
 
 rescue LoadError => e

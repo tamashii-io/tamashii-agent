@@ -54,14 +54,14 @@ module Codeme
 
 
       attr_reader :url
-      def initialize(master)
+      def initialize(master, host, port)
         super()
         @master = master
-        @url = "#{Config.use_ssl ? "wss" : "ws"}://#{Config.host}:#{Config.port}"
+        @url = "#{Config.use_ssl ? "wss" : "ws"}://#{host}:#{port}"
         self.reset
         
-        @host = Config.host
-        @port = Config.port
+        @host = host
+        @port = port
         @tag = 0
         
         @request_pool = RequestPool.new
@@ -110,13 +110,17 @@ module Codeme
         end
       end
 
+      def send_auth_request
+        # TODO: other types of auth 
+        @driver.binary(Packet.new(TYPE_CODE_AUTH | ACTION_CODE_AUTH_TOKEN, 0, [@master.serial_number,Config.token].join(",")).dump)
+      end
+
       def start_web_driver
         @driver = WebSocket::Driver.client(self)
         @driver.on :open, proc { |e| 
           Logger.info "Server opened"
           self.auth_request
-          # Send auth request
-          @driver.binary(Packet.new(TYPE_CODE_AUTH | ACTION_CODE_AUTH_TOKEN, 0, [@master.serial_number,"ABC123"].join(",")).dump)
+          send_auth_request
         }
         @driver.on :close, proc { |e| 
           Logger.info "Server closed"
