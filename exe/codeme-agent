@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+
+require 'codeme/agent/version'
+require 'codeme/agent'
+
+options = {
+  port: 3000,
+  host: "localhost",
+  use_ssl: false,
+  log_file: nil,
+
+}
+
+OptionParser.new do |opts|
+  opts.on("-v", "--version", "Display Codeme::Agent version") {
+    puts "Codeme::Manager #{Codeme::Agent::VERSION}"
+    exit
+  }
+
+  opts.on("-h", "--help") {
+    puts opts
+    exit
+  }
+
+  opts.separator ""
+  opts.on("-o", "--host HOST", "Set manager hostname (default: localhost)") { |host| options[:host] = host.to_s }
+  opts.on("-p", "--port PORT", "Set manager port (default: 3000)") { |port| options[:port] = port.to_i }
+  opts.on("-C", "--config FILE", "The external configuration file") { |config| require File.join(Dir.pwd, config) }
+
+  opts.parse! ARGV
+end
+
+
+begin
+  config = Codeme::Agent::Config
+  options.each do |key, value|
+    config.send(key, value)
+  end
+  case config.auth_type
+  when :token
+    raise LoadError.new("Token authorization require to set token") if config.token.nil?
+  end
+  agent = Codeme::Agent::Master.new(options[:host],options[:port])
+  agent.run!
+
+rescue LoadError => e
+  # TODO: Improve error message
+  STDERR.puts e
+rescue SystemExit, Interrupt
+  puts "Stopping"
+  agent.stop
+end

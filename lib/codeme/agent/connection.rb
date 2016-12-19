@@ -169,7 +169,8 @@ module Codeme
         if self.auth_pending?
           if pkt.type == TYPE_CODE_AUTH | ACTION_CODE_AUTH_RESULT
             if pkt.body == "0" # true
-              Logger.info "Auth Success, connection established"
+              @tag = pkt.tag
+              Logger.info "Auth Success, connection established, tag = #{@tag}"
               self.auth_success
             else
               Logger.error "Auth Failure"
