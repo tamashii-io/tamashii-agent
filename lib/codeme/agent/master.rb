@@ -8,11 +8,24 @@ module Codeme
   module Agent
     class Master < Component
 
+      attr_reader :serial_number
+
       def initialize(host, port)
         super()
         @host = host
         @port = port
+        @serial_number = get_serial_number
         create_components
+      end
+
+      def get_serial_number
+        File.open("/proc/cpuinfo") do |f|
+          content = f.read
+          if content =~ /Serial\s*:\s*(\w+)/
+            return $1
+          end
+        end
+        return nil
       end
 
       def create_components

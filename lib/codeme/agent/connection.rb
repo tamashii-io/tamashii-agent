@@ -1,6 +1,8 @@
 require 'socket'
 
 require 'websocket/driver'
+require 'aasm'
+
 require 'codeme/common'
 
 require 'codeme/agent/component'
@@ -24,15 +26,42 @@ end
 module Codeme
   module Agent
     class Connection < Component
+      include AASM
+
+      aasm do
+        state :init, initial: true
+        state :connecting
+        state :auth_pending
+        state :ready
+
+        event :connect do
+          transitions from: :init, to: :connecting
+        end
+        
+        event :auth_request do
+          transitions from: :connecting, to: :auth_pending
+        end
+        
+        event :auth_success do
+          transitions from: :auth_pending, to: :ready
+        end
+
+        event :reset do
+          transitions to: :init
+        end
+      end
+
+
       attr_reader :url
       def initialize(master, host, port)
         super()
         @master = master
         @url = "ws://#{host}:#{port}"
-        @ready = false
+        self.reset
+        
         @host = host
         @port = port
-        @tag = rand(60000) # TODO: get tag first!
+        @tag = 0
         
         @request_pool = RequestPool.new
         @request_pool.set_handler(:request_timedout, method(:handle_request_timedout))
@@ -54,7 +83,7 @@ module Codeme
       end
 
       def handle_send_request(req)
-        if @ready
+        if self.ready?
           @driver.binary(Packet.new(req.ev_type, @tag, req.wrap_body).dump)
           true
         else
@@ -84,17 +113,20 @@ module Codeme
         @driver = WebSocket::Driver.client(self)
         @driver.on :open, proc { |e| 
           log "Server opened"
-          @ready = true
+          self.auth_request
+          # Send auth request
+          @driver.binary(Packet.new(Packet::TYPE_CODE_AUTH | Packet::ACTION_CODE_AUTH_TOKEN, 0, [@master.serial_number,"ABC123"].join(",")).dump)
         }
         @driver.on :close, proc { |e| 
           log "Server closed"
-          @ready = false
+          self.reset
         }
         @driver.on :message, proc { |e|
           pkt = Packet.load(e.data)
           process_packet(pkt) if pkt
         }
         @driver.start
+        self.connect
       end
 
       def register_socket_io
@@ -104,7 +136,7 @@ module Codeme
           if msg.empty?
             # socket closed
             close_socket_io
-            @ready = false
+            self.reset
           else
             @driver.parse(msg)
           end
@@ -130,16 +162,29 @@ module Codeme
       rescue
         log "Write Error"
         close_socket_io
-        @ready = false
+        self.reset
       end
 
       def process_packet(pkt)
-        if pkt.tag == @tag
-          Resolver.resolve(pkt) 
+        if self.auth_pending?
+          if pkt.type == Packet::TYPE_CODE_AUTH | Packet::ACTION_CODE_AUTH_RESULT
+            if pkt.body == "0" # true
+              log "Auth Success, connection established"
+              self.auth_success
+            else
+              log "Auth Failure"
+            end
+          else
+            log "Auth error: Not an auth result packet"
+          end
+        else
+          if pkt.tag == @tag
+            Resolver.resolve(pkt) 
+          end
+          # TODO: check packet type
+          # if packet is CARD_RESULT
+          @request_pool.add_response(Response.new(pkt.type, pkt.body))
         end
-        # TODO: check packet type
-        # if packet is CARD_RESULT
-        @request_pool.add_response(Response.new(pkt.type, pkt.body))
       end
 
       def process_event(ev_type, ev_body)

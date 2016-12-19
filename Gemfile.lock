@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     codeme-agent (0.1.0)
+      aasm
       codeme-common
       mfrc522
       nio4r
@@ -11,11 +12,12 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
+    aasm (4.11.1)
     codeme-common (0.1.0)
     diff-lcs (1.2.5)
     eventmachine (1.0.9)
     ffi (1.9.14)
-    mfrc522 (1.0.2)
+    mfrc522 (1.0.4)
       pi_piper (~> 2.0.0, >= 2.0.0)
     nio4r (1.2.1)
     pi_piper (2.0.0)
