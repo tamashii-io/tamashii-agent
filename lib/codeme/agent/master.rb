@@ -10,10 +10,8 @@ module Codeme
 
       attr_reader :serial_number
 
-      def initialize(host, port)
+      def initialize
         super()
-        @host = host
-        @port = port
         @serial_number = get_serial_number
         create_components
       end
@@ -30,7 +28,7 @@ module Codeme
 
       def create_components
         @components = {}
-        @components[:connection] = create_component(Connection, self, @host, @port)
+        @components[:connection] = create_component(Connection, self)
         @components[:buzzer] = create_component(Buzzer)
         @components[:card_reader] = create_component(CardReader, self)
       end

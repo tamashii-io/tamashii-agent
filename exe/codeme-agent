@@ -40,7 +40,7 @@ begin
   when :token
     raise LoadError.new("Token authorization require to set token") if config.token.nil?
   end
-  agent = Codeme::Agent::Master.new(options[:host],options[:port])
+  agent = Codeme::Agent::Master.new
   agent.run!
 
 rescue LoadError => e

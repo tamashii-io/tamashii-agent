@@ -5,6 +5,7 @@ require 'aasm'
 
 require 'codeme/common'
 
+require 'codeme/agent/config'
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
 
@@ -53,14 +54,14 @@ module Codeme
 
 
       attr_reader :url
-      def initialize(master, host, port)
+      def initialize(master)
         super()
         @master = master
-        @url = "ws://#{host}:#{port}"
+        @url = "#{Config.use_ssl ? "wss" : "ws"}://#{Config.host}:#{Config.port}"
         self.reset
         
-        @host = host
-        @port = port
+        @host = Config.host
+        @port = Config.port
         @tag = 0
         
         @request_pool = RequestPool.new
