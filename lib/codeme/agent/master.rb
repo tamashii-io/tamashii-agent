@@ -30,20 +30,14 @@ module Codeme
 
       def create_components
         @components = {}
-        @components[:connection] = create_component(Connection, self, @host, @port) do  |c|
-          c.enable_log = true
-        end
-        @components[:buzzer] = create_component(Buzzer) do  |c|
-          c.enable_log = true
-        end
-        @components[:card_reader] = create_component(CardReader, self) do  |c|
-          c.enable_log = true
-        end
+        @components[:connection] = create_component(Connection, self, @host, @port)
+        @components[:buzzer] = create_component(Buzzer)
+        @components[:card_reader] = create_component(CardReader, self)
       end
 
       def create_component(class_name, *args)
         c = class_name.new(*args)
-        yield c
+        yield c if block_given?
         c.run
         c
       end

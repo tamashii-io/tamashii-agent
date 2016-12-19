@@ -48,7 +48,6 @@ module Codeme
     end
 
     class RequestPool
-      include Logger
       def initialize
         @pool = {}
         @handlers = {}
@@ -62,7 +61,7 @@ module Codeme
         if handle?(sym)
           @handlers[sym].call(*args)
         else
-          log "WARN: un-handled event: #{sym}"
+          Logger.warn "WARN: un-handled event: #{sym}"
         end
       end
 

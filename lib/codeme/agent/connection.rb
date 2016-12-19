@@ -35,19 +35,19 @@ module Codeme
         state :ready
 
         event :connect do
-          transitions from: :init, to: :connecting
+          transitions from: :init, to: :connecting, after: Proc.new { Logger.info "Start connecting" }
         end
         
         event :auth_request do
-          transitions from: :connecting, to: :auth_pending
+          transitions from: :connecting, to: :auth_pending, after: Proc.new { Logger.info "Sending authorization request" }
         end
         
         event :auth_success do
-          transitions from: :auth_pending, to: :ready
+          transitions from: :auth_pending, to: :ready, after: Proc.new { Logger.info "Authorization finished" }
         end
 
         event :reset do
-          transitions to: :init
+          transitions to: :init, after: Proc.new { Logger.info "Connection state reset" }
         end
       end
 
@@ -69,7 +69,7 @@ module Codeme
         @request_pool.set_handler(:send_request, method(:handle_send_request))
         
         Codeme::Resolver.config do
-          handler TYPE_SYSTEM,  SystemHandler
+          handler TYPE_CODE_SYSTEM,  SystemHandler
         end
       end
 
@@ -78,7 +78,7 @@ module Codeme
       end
 
       def handle_request_meet(req, res)
-        log "Got packet: #{res.ev_type}: #{res.ev_body}"
+        Logger.debug "Got packet: #{res.ev_type}: #{res.ev_body}"
         @master.send_event(EVENT_BEEP, ["ok", "no"].sample)
       end
 
@@ -112,13 +112,13 @@ module Codeme
       def start_web_driver
         @driver = WebSocket::Driver.client(self)
         @driver.on :open, proc { |e| 
-          log "Server opened"
+          Logger.info "Server opened"
           self.auth_request
           # Send auth request
-          @driver.binary(Packet.new(Packet::TYPE_CODE_AUTH | Packet::ACTION_CODE_AUTH_TOKEN, 0, [@master.serial_number,"ABC123"].join(",")).dump)
+          @driver.binary(Packet.new(TYPE_CODE_AUTH | ACTION_CODE_AUTH_TOKEN, 0, [@master.serial_number,"ABC123"].join(",")).dump)
         }
         @driver.on :close, proc { |e| 
-          log "Server closed"
+          Logger.info "Server closed"
           self.reset
         }
         @driver.on :message, proc { |e|
@@ -144,14 +144,14 @@ module Codeme
       end
 
       def try_create_socket
-        log "try to re-open socket..."
+        Logger.info "try to re-open socket..."
         TCPSocket.new(@host, @port)
       rescue
         nil
       end
 
       def close_socket_io
-        log "Socket IO Closed and Deregistered"
+        Logger.info "Socket IO Closed and Deregistered"
         @selector.deregister(@io)
         @io.close
         @io = nil
@@ -160,22 +160,22 @@ module Codeme
       def write(string)
         @io.write(string)
       rescue
-        log "Write Error"
+        Logger.error "Write Error"
         close_socket_io
         self.reset
       end
 
       def process_packet(pkt)
         if self.auth_pending?
-          if pkt.type == Packet::TYPE_CODE_AUTH | Packet::ACTION_CODE_AUTH_RESULT
+          if pkt.type == TYPE_CODE_AUTH | ACTION_CODE_AUTH_RESULT
             if pkt.body == "0" # true
-              log "Auth Success, connection established"
+              Logger.info "Auth Success, connection established"
               self.auth_success
             else
-              log "Auth Failure"
+              Logger.error "Auth Failure"
             end
           else
-            log "Auth error: Not an auth result packet"
+            Logger.error "Auth error: Not an auth result packet"
           end
         else
           if pkt.tag == @tag

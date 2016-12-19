@@ -32,14 +32,14 @@ module Codeme
           uid, sak = @reader.picc_select
           process_uid(uid.join("-"))
         rescue CommunicationError, UnexpectedDataError => e
-          log "Error selecting card: #{e.message}"
+          Logger.error "Error selecting card: #{e.message}"
         end
 
-        log "picc halt #{@reader.picc_halt}"
+        Logger.debug "picc halt #{@reader.picc_halt}"
       end
 
       def process_uid(uid)
-        log "New card detected, UID: #{uid}"
+        Logger.info "New card detected, UID: #{uid}"
         @master.send_event(EVENT_CARD_DATA, uid)
       end
 

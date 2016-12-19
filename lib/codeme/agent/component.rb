@@ -4,15 +4,11 @@ require 'codeme/agent/logger'
 module Codeme
   module Agent
     class Component
-
-      include Logger
-
       EVENT_BEEP = 1
       EVENT_SYSTEM_COMMAND = 2
       EVENT_AUTH_RESULT = 3
       EVENT_CARD_DATA = 4
       EVENT_CONNECTION_NOT_READY = 255
-
 
       def initialize
         @pipe_r, @pipe_w = IO.pipe
@@ -30,7 +26,7 @@ module Codeme
       end
 
       def process_event(ev_type, ev_body)
-        log "Got event: #{ev_type}, #{ev_body}"
+        Logger.debug "Got event: #{ev_type}, #{ev_body}"
       end
 
       # worker
@@ -43,7 +39,7 @@ module Codeme
       end
       
       def stop
-        log "Stopping"
+        Logger.info "Stopping #{self.class}"
         @thr.exit if @thr
         @thr = nil
         clean_up
