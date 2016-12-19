@@ -92,7 +92,7 @@ module Codeme
         }
         @driver.on :message, proc { |e|
           pkt = Packet.load(e.data)
-          process_packet(pkt)
+          process_packet(pkt) if pkt
         }
         @driver.start
       end
