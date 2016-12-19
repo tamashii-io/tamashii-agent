@@ -6,6 +6,21 @@ require 'codeme/common'
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
 
+
+
+module Codeme
+  module Agent
+    class SystemHandler < Handler
+      def resolve(action_code, data = nil)
+        puts "action code: #{action_code}, data: #{data}, env: #{@env}"
+      end
+    end
+  end
+end
+
+
+
+
 module Codeme
   module Agent
     class Connection < Component
@@ -17,10 +32,16 @@ module Codeme
         @ready = false
         @host = host
         @port = port
+        @tag = rand(60000) # TODO: get tag first!
+        
         @request_pool = RequestPool.new
-        @request_pool.on_request_timedout = method(:handle_request_timedout)
-        @request_pool.on_request_meet = method(:handle_request_meet)
-        @request_pool.on_send_request = method(:handle_send_request)
+        @request_pool.set_handler(:request_timedout, method(:handle_request_timedout))
+        @request_pool.set_handler(:request_meet, method(:handle_request_meet))
+        @request_pool.set_handler(:send_request, method(:handle_send_request))
+        
+        Codeme::Resolver.config do
+          handler TYPE_SYSTEM,  SystemHandler
+        end
       end
 
       def handle_request_timedout(req)
@@ -34,7 +55,7 @@ module Codeme
 
       def handle_send_request(req)
         if @ready
-          @driver.text(Packet.new(req.ev_type, req.wrap_body).dump)
+          @driver.binary(Packet.new(req.ev_type, @tag, req.wrap_body).dump)
           true
         else
           false
@@ -113,6 +134,9 @@ module Codeme
       end
 
       def process_packet(pkt)
+        if pkt.tag == @tag
+          Resolver.resolve(pkt) 
+        end
         # TODO: check packet type
         # if packet is CARD_RESULT
         @request_pool.add_response(Response.new(pkt.type, pkt.body))

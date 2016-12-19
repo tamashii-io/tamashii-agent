@@ -1,8 +1,8 @@
 require 'json'
+require 'codeme/agent/logger'
+
 module Codeme
   module Agent
-
-
     class Request
       attr_accessor :id
       attr_accessor :ev_type
@@ -48,16 +48,26 @@ module Codeme
     end
 
     class RequestPool
-
-      attr_accessor :on_request_timedout
-      attr_accessor :on_request_meet
-      attr_accessor :on_send_request
-
+      include Logger
       def initialize
         @pool = {}
-        @on_request_timedout = nil
-        @on_request_meet = nil
-        @on_send_request = nil
+        @handlers = {}
+      end
+
+      def set_handler(sym, method)
+         @handlers[sym] = method      
+      end
+
+      def call_handler(sym, *args)
+        if handle?(sym)
+          @handlers[sym].call(*args)
+        else
+          log "WARN: un-handled event: #{sym}"
+        end
+      end
+
+      def handle?(sym)
+        @handlers.has_key? sym
       end
 
       def add_request(req, timedout = 3)
@@ -70,9 +80,7 @@ module Codeme
         req_data = @pool[res.id]
         if req_data
           @pool.delete(res.id)
-          if @on_request_meet
-            @on_request_meet.call(req_data[:req], res)
-          end
+          call_handler(:request_meet, req_data[:req], res)
         else
           # unmatched response
           # discard
@@ -91,9 +99,7 @@ module Codeme
           if now - req_data[:timestamp] >= req_data[:timedout]
             # timedout
             @pool.delete(id)
-            if @on_request_timedout
-             @on_request_timedout.call(req_data[:req])
-            end
+            call_handler(:request_timedout, req_data[:req])
           end
         end
       end
@@ -105,10 +111,8 @@ module Codeme
       end
 
       def try_send_request(req)
-        if @on_send_request
-          if @on_send_request.call(req)
-            req.sent!
-          end
+        if handle?(:send_request)
+          req.sent! if call_handler(:send_request, req)
         end
       end
     end

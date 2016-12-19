@@ -1,7 +1,11 @@
 require 'nio'
+require 'codeme/agent/logger'
+
 module Codeme
   module Agent
     class Component
+
+      include Logger
 
       EVENT_BEEP = 1
       EVENT_SYSTEM_COMMAND = 2
@@ -10,10 +14,7 @@ module Codeme
       EVENT_CONNECTION_NOT_READY = 255
 
 
-      attr_accessor :enable_log
-
       def initialize
-        @enable_log = true
         @pipe_r, @pipe_w = IO.pipe
       end
 
@@ -30,10 +31,6 @@ module Codeme
 
       def process_event(ev_type, ev_body)
         log "Got event: #{ev_type}, #{ev_body}"
-      end
-
-      def log(msg)
-        puts "[#{self.class}] #{msg}" if @enable_log
       end
 
       # worker
