@@ -40,11 +40,11 @@ module Codeme
         end
         
         event :auth_request do
-          transitions from: :connecting, to: :auth_pending, after: Proc.new { Logger.info "Sending authorization request" }
+          transitions from: :connecting, to: :auth_pending, after: Proc.new { Logger.info "Sending authentication request" }
         end
         
         event :auth_success do
-          transitions from: :auth_pending, to: :ready, after: Proc.new { Logger.info "Authorization finished" }
+          transitions from: :auth_pending, to: :ready, after: Proc.new { Logger.info "Authentication finished" }
         end
 
         event :reset do
@@ -124,6 +124,7 @@ module Codeme
         }
         @driver.on :close, proc { |e| 
           Logger.info "Server closed"
+          close_socket_io
           self.reset
         }
         @driver.on :message, proc { |e|
@@ -175,13 +176,14 @@ module Codeme
           if pkt.type == TYPE_CODE_AUTH | ACTION_CODE_AUTH_RESULT
             if pkt.body == "0" # true
               @tag = pkt.tag
-              Logger.info "Auth Success, connection established, tag = #{@tag}"
+              Logger.info "Authentication Success, connection established, tag = #{@tag}"
               self.auth_success
             else
-              Logger.error "Auth Failure"
+              Logger.error "Authentication failed. Delay for 3 seconds"
+              sleep 3
             end
           else
-            Logger.error "Auth error: Not an auth result packet"
+            Logger.error "Authentication error: Not an authentication result packet"
           end
         else
           if pkt.tag == @tag
