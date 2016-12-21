@@ -1,25 +1,40 @@
 module Codeme
   module Agent
-    module Config
+    class Config
       AUTH_TYPES = [:none, :token]
 
-      def self.auth_type(type = nil)
+      class << self
+        def instance
+          @instance ||= Config.new
+        end
+
+        def method_missing(name, *args, &block)
+          instance.send(name, *args, &block)
+        end
+      end
+
+      def auth_type(type = nil)
         return @auth_type ||= :none if type.nil?
         return unless AUTH_TYPES.include?(type)
         @auth_type = type.to_sym
       end
 
-      def self.token(token = nil)
+      def token(token = nil)
         return @token if token.nil?
         @token = token.to_s
       end
 
-      def self.log_file(path = nil)
+      def log_file(path = nil)
         return @log_file ||= STDOUT if path.nil?
-        @log_file = path
+        @log_file = path.to_s if @log_file.nil?
       end
 
-      def self.use_ssl(val = nil)
+      def log_level(level = nil)
+        return Logger.level if level.nil?
+        Logger.level = level
+      end
+
+      def use_ssl(val = nil)
         return @use_ssl if val.nil?
         @use_ssl = val
       end
