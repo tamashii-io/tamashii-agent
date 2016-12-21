@@ -9,13 +9,23 @@ require 'codeme/agent/config'
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
 
-
-
 module Codeme
   module Agent
     class SystemHandler < Handler
       def resolve(action_code, data = nil)
-        puts "action code: #{action_code}, data: #{data}, env: #{@env}"
+        puts "action code: #{action_code}, data: #{data}"
+      end
+    end
+
+    class RFIDHandler < Handler
+      def resolve(action_code, data = nil)
+        case action_code
+        when ACTION_CODE_RFID_DATA  
+          Logger.debug "echo data: #{data}"
+          self.env[:connection].request_pool.add_response(Response.new(self.type_code | action_code, data))
+        else
+          Logger.warn "Un-handled action code: #{action_code}, data: #{data}"
+        end
       end
     end
   end
@@ -54,6 +64,8 @@ module Codeme
 
 
       attr_reader :url
+      attr_reader :request_pool
+
       def initialize(master, host, port)
         super()
         @master = master
@@ -69,8 +81,10 @@ module Codeme
         @request_pool.set_handler(:request_meet, method(:handle_request_meet))
         @request_pool.set_handler(:send_request, method(:handle_send_request))
         
-        Codeme::Resolver.config do
+        env_data = {connection: self}
+        Codeme::Resolver.config(env_data) do
           handler TYPE_CODE_SYSTEM,  SystemHandler
+          handler TYPE_CODE_RFID,  RFIDHandler
         end
       end
 
@@ -186,19 +200,18 @@ module Codeme
             Logger.error "Authentication error: Not an authentication result packet"
           end
         else
-          if pkt.tag == @tag
+          if pkt.tag == @tag || pkt.tag == 0
             Resolver.resolve(pkt) 
+          else
+            Logger.debug "Tag mismatch packet: tag: #{pkt.tag}, type: #{pkt.type}"
           end
-          # TODO: check packet type
-          # if packet is CARD_RESULT
-          @request_pool.add_response(Response.new(pkt.type, pkt.body))
         end
       end
 
       def process_event(ev_type, ev_body)
         case ev_type
         when EVENT_CARD_DATA
-          req = Request.new(ev_type, ev_body, ev_body)
+          req = Request.new(TYPE_CODE_RFID | ACTION_CODE_RFID_DATA , ev_body, ev_body)
           @request_pool.add_request(req)
         end
       end
