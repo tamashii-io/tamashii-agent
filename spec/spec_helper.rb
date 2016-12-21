@@ -1,7 +1,10 @@
 $LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
 require "codeme/agent"
 require 'tempfile'
+require 'simplecov'
 
- Codeme::Agent.config do
+SimpleCov.start
+
+Codeme::Agent.config do
   log_file Tempfile.new.path
- end
+end
