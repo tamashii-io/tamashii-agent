@@ -30,9 +30,6 @@ end
 
 begin
   config = Codeme::Agent::Config
-  options.each do |key, value|
-    config.send(key, value)
-  end
   case config.auth_type
   when :token
     raise LoadError.new("Token authorization require to set token") if config.token.nil?

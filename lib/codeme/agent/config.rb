@@ -23,16 +23,6 @@ module Codeme
         return @use_ssl if val.nil?
         @use_ssl = val
       end
-
-      def self.host(val = nil)
-        return @host if val.nil?
-        @host = val.to_s
-      end
-
-      def self.port(val = nil)
-        return @port if val.nil?
-        @port = val.to_i
-      end
     end
   end
 end
