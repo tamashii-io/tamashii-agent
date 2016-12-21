@@ -5,7 +5,12 @@ describe Codeme::Agent do
     expect(Codeme::Agent::VERSION).not_to be nil
   end
 
-  it "does something useful" do
-    expect(false).to eq(true)
+  it "can get config" do
+    expect(Codeme::Agent.config).to be(Codeme::Agent::Config)
   end
+
+  it "can get logger" do
+    expect(Codeme::Agent.logger).to be_instance_of(Codeme::Agent::Logger)
+  end
+
 end
