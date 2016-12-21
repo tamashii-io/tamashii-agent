@@ -4,7 +4,3 @@ require 'tempfile'
 require 'simplecov'
 
 SimpleCov.start
-
-Codeme::Agent.config do
-  log_file Tempfile.new.path
-end
