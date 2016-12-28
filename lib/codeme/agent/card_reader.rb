@@ -1,6 +1,8 @@
 require 'mfrc522'
 
 require 'codeme/agent/component'
+require 'codeme/agent/adapter/card_reader'
+
 
 module Codeme
   module Agent
@@ -8,7 +10,8 @@ module Codeme
       def initialize(master)
         super()
         @master = master
-        @reader = MFRC522.new
+        @reader = Adapter::CardReader.object
+        logger.debug "Using card_reader instance: #{@reader.class}"
       end
 
       # override
@@ -36,8 +39,7 @@ module Codeme
         rescue => e
           logger.error "GemError when selecting card: #{e.message}"
         end
-
-        logger.debug "picc halt #{@reader.picc_halt}"
+        @reader.picc_halt
       end
 
       def process_uid(uid)
