@@ -32,7 +32,9 @@ module Codeme
           uid, sak = @reader.picc_select
           process_uid(uid.join("-"))
         rescue CommunicationError, UnexpectedDataError => e
-          logger.error "Error selecting card: #{e.message}"
+          logger.error "Error when selecting card: #{e.message}"
+        rescue => e
+          logger.error "GemError when selecting card: #{e.message}"
         end
 
         logger.debug "picc halt #{@reader.picc_halt}"
