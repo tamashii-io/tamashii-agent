@@ -5,9 +5,11 @@ require 'aasm'
 
 require 'codeme/common'
 
+
 require 'codeme/agent/config'
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
+
 
 module Codeme
   module Agent

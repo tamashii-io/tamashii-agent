@@ -1,12 +1,13 @@
 require 'codeme/agent/component'
-require 'codeme/agent/pi_buzzer'
+require 'codeme/agent/adapter/buzzer'
 
 module Codeme
   module Agent
     class Buzzer < Component
       def initialize
         super
-        PIBuzzer.setup
+        @buzzer = Adapter::Buzzer.object
+        logger.debug "Using buzzer instance: #{@buzzer.class}"
       end
 
       def process_event(ev_type, ev_body)
@@ -15,19 +16,18 @@ module Codeme
           logger.debug "Beep: #{ev_body}"
           case ev_body
           when "ok"
-            PIBuzzer.play_ok
+            @buzzer.play_ok
           when "no"
-            PIBuzzer.play_no
+            @buzzer.play_no
           when "error"
-            PIBuzzer.play_error
+            @buzzer.play_error
           end
         end
       end
 
       def clean_up
         super
-        PIBuzzer.stop
-
+        @buzzer.stop
       end
     end
   end

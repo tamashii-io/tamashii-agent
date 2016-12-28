@@ -1,7 +1,8 @@
+require "codeme/common"
 require "codeme/agent/version"
 require "codeme/agent/master"
-require "codeme/agent/logger"
 require "codeme/agent/config"
+
 
 module Codeme
   module Agent

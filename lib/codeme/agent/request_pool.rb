@@ -1,5 +1,6 @@
 require 'json'
-require 'codeme/agent/logger'
+require 'codeme/agent/common'
+
 
 module Codeme
   module Agent
@@ -48,6 +49,7 @@ module Codeme
     end
 
     class RequestPool
+      include Common::Loggable
       def initialize
         @pool = {}
         @handlers = {}
@@ -61,7 +63,7 @@ module Codeme
         if handle?(sym)
           @handlers[sym].call(*args)
         else
-          Logger.warn "WARN: un-handled event: #{sym}"
+          logger.warn "WARN: un-handled event: #{sym}"
         end
       end
 

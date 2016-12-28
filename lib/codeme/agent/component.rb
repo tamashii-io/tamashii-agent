@@ -1,9 +1,11 @@
 require 'nio'
-require 'codeme/agent/logger'
+require 'codeme/agent/common'
 
 module Codeme
   module Agent
     class Component
+      include Common::Loggable
+
       EVENT_BEEP = 1
       EVENT_SYSTEM_COMMAND = 2
       EVENT_AUTH_RESULT = 3
@@ -12,15 +14,6 @@ module Codeme
 
       def initialize
         @pipe_r, @pipe_w = IO.pipe
-      end
-
-      def logger
-        Logger.progname = self.progname
-        Logger
-      end
-
-      def progname
-        @progname ||= ("%-10s" % self.class.to_s.split(":")[-1])
       end
 
       def send_event(type, body)
