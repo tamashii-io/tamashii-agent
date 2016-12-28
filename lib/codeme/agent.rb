@@ -11,7 +11,7 @@ module Codeme
     end
 
     def self.logger
-      @logger ||= Logger.new(STDOUT)
+      @logger ||= Codeme::Logger.new(Config.log_file)
     end
   end
 end

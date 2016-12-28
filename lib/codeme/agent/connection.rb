@@ -50,7 +50,7 @@ module Codeme
         end
         
         event :auth_success do
-          transitions from: :auth_pending, to: :ready, after: Proc.new { logger.info "Authentication finished" }
+          transitions from: :auth_pending, to: :ready, after: Proc.new { logger.info "Authentication finished. Tag = #{@tag}" }
         end
 
         event :reset do
@@ -186,7 +186,6 @@ module Codeme
           if pkt.type == Type::AUTH_RESPONSE
             if pkt.body == "0" # true
               @tag = pkt.tag
-              logger.info "Authentication Success, connection established, tag = #{@tag}"
               self.auth_success
             else
               logger.error "Authentication failed. Delay for 3 seconds"

@@ -12,7 +12,7 @@ module Codeme
       def process_event(ev_type, ev_body)
         case ev_type
         when EVENT_BEEP
-          Logger.debug "Beep: #{ev_body}"
+          logger.debug "Beep: #{ev_body}"
           case ev_body
           when "ok"
             PIBuzzer.play_ok

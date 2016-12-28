@@ -14,6 +14,15 @@ module Codeme
         @pipe_r, @pipe_w = IO.pipe
       end
 
+      def logger
+        Logger.progname = self.progname
+        Logger
+      end
+
+      def progname
+        @progname ||= ("%-10s" % self.class.to_s.split(":")[-1])
+      end
+
       def send_event(type, body)
         str = [type, body.size].pack("Cn") + body
         @pipe_w.write(str)
@@ -26,7 +35,7 @@ module Codeme
       end
 
       def process_event(ev_type, ev_body)
-        Logger.debug "Got event: #{ev_type}, #{ev_body}"
+        logger.debug "Got event: #{ev_type}, #{ev_body}"
       end
 
       # worker
@@ -39,7 +48,7 @@ module Codeme
       end
       
       def stop
-        Logger.info "Stopping #{self.class}"
+        logger.info "Stopping component"
         @thr.exit if @thr
         @thr = nil
         clean_up
