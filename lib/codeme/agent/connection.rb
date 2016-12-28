@@ -12,20 +12,16 @@ require 'codeme/agent/request_pool'
 module Codeme
   module Agent
     class SystemHandler < Handler
-      def resolve(action_code, data = nil)
-        puts "action code: #{action_code}, data: #{data}"
+      def resolve(data)
+        connection.logger.debug "echo data: #{data}"
       end
     end
 
     class RFIDHandler < Handler
-      def resolve(action_code, data = nil)
-        case action_code
-        when ACTION_CODE_RFID_DATA  
-          Logger.debug "echo data: #{data}"
-          self.env[:connection].request_pool.add_response(Response.new(self.type_code | action_code, data))
-        else
-          Logger.warn "Un-handled action code: #{action_code}, data: #{data}"
-        end
+      def resolve(data)
+        connection = self.env[:connection]
+        connection.logger.debug "echo data: #{data}"
+        connection.request_pool.add_response(Response.new(self.type, data))
       end
     end
   end
@@ -46,19 +42,19 @@ module Codeme
         state :ready
 
         event :connect do
-          transitions from: :init, to: :connecting, after: Proc.new { Logger.info "Start connecting" }
+          transitions from: :init, to: :connecting, after: Proc.new { logger.info "Start connecting" }
         end
         
         event :auth_request do
-          transitions from: :connecting, to: :auth_pending, after: Proc.new { Logger.info "Sending authentication request" }
+          transitions from: :connecting, to: :auth_pending, after: Proc.new { logger.info "Sending authentication request" }
         end
         
         event :auth_success do
-          transitions from: :auth_pending, to: :ready, after: Proc.new { Logger.info "Authentication finished" }
+          transitions from: :auth_pending, to: :ready, after: Proc.new { logger.info "Authentication finished" }
         end
 
         event :reset do
-          transitions to: :init, after: Proc.new { Logger.info "Connection state reset" }
+          transitions to: :init, after: Proc.new { logger.info "Connection state reset" }
         end
       end
 
@@ -82,9 +78,9 @@ module Codeme
         @request_pool.set_handler(:send_request, method(:handle_send_request))
         
         env_data = {connection: self}
-        Codeme::Resolver.config(env_data) do
-          handler TYPE_CODE_SYSTEM,  SystemHandler
-          handler TYPE_CODE_RFID,  RFIDHandler
+        Resolver.config do
+          handle Type::REBOOT,  SystemHandler, env_data
+          handle Type::RFID_NUMBER,  RFIDHandler, env_data
         end
       end
 
@@ -93,7 +89,7 @@ module Codeme
       end
 
       def handle_request_meet(req, res)
-        Logger.debug "Got packet: #{res.ev_type}: #{res.ev_body}"
+        logger.debug "Got packet: #{res.ev_type}: #{res.ev_body}"
         @master.send_event(EVENT_BEEP, ["ok", "no"].sample)
       end
 
@@ -126,18 +122,18 @@ module Codeme
 
       def send_auth_request
         # TODO: other types of auth 
-        @driver.binary(Packet.new(TYPE_CODE_AUTH | ACTION_CODE_AUTH_TOKEN, 0, [@master.serial_number,Config.token].join(",")).dump)
+        @driver.binary(Packet.new(Type::AUTH_TOKEN, 0, [@master.serial_number,Config.token].join(",")).dump)
       end
 
       def start_web_driver
         @driver = WebSocket::Driver.client(self)
         @driver.on :open, proc { |e| 
-          Logger.info "Server opened"
+          logger.info "Server opened"
           self.auth_request
           send_auth_request
         }
         @driver.on :close, proc { |e| 
-          Logger.info "Server closed"
+          logger.info "Server closed"
           close_socket_io
           self.reset
         }
@@ -164,14 +160,14 @@ module Codeme
       end
 
       def try_create_socket
-        Logger.info "try to re-open socket..."
+        logger.info "try to re-open socket..."
         TCPSocket.new(@host, @port)
       rescue
         nil
       end
 
       def close_socket_io
-        Logger.info "Socket IO Closed and Deregistered"
+        logger.info "Socket IO Closed and Deregistered"
         @selector.deregister(@io)
         @io.close
         @io = nil
@@ -180,30 +176,30 @@ module Codeme
       def write(string)
         @io.write(string)
       rescue
-        Logger.error "Write Error"
+        logger.error "Write Error"
         close_socket_io
         self.reset
       end
 
       def process_packet(pkt)
         if self.auth_pending?
-          if pkt.type == TYPE_CODE_AUTH | ACTION_CODE_AUTH_RESULT
+          if pkt.type == Type::AUTH_RESPONSE
             if pkt.body == "0" # true
               @tag = pkt.tag
-              Logger.info "Authentication Success, connection established, tag = #{@tag}"
+              logger.info "Authentication Success, connection established, tag = #{@tag}"
               self.auth_success
             else
-              Logger.error "Authentication failed. Delay for 3 seconds"
+              logger.error "Authentication failed. Delay for 3 seconds"
               sleep 3
             end
           else
-            Logger.error "Authentication error: Not an authentication result packet"
+            logger.error "Authentication error: Not an authentication result packet"
           end
         else
           if pkt.tag == @tag || pkt.tag == 0
             Resolver.resolve(pkt) 
           else
-            Logger.debug "Tag mismatch packet: tag: #{pkt.tag}, type: #{pkt.type}"
+            logger.debug "Tag mismatch packet: tag: #{pkt.tag}, type: #{pkt.type}"
           end
         end
       end
@@ -211,7 +207,7 @@ module Codeme
       def process_event(ev_type, ev_body)
         case ev_type
         when EVENT_CARD_DATA
-          req = Request.new(TYPE_CODE_RFID | ACTION_CODE_RFID_DATA , ev_body, ev_body)
+          req = Request.new(Type::RFID_NUMBER , ev_body, ev_body)
           @request_pool.add_request(req)
         end
       end
