@@ -160,7 +160,7 @@ module Codeme
       end
 
       def try_create_socket
-        logger.info "try to re-open socket..."
+        logger.info "try to open socket..."
         TCPSocket.new(@host, @port)
       rescue
         nil

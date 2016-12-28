@@ -12,6 +12,7 @@ module Codeme
 
       def initialize(host, port)
         super()
+        logger.info "Starting Codeme::Agent in #{Config.env} mode"
         @host = host
         @port = port
         @serial_number = get_serial_number
@@ -37,6 +38,7 @@ module Codeme
 
       def create_component(class_name, *args)
         c = class_name.new(*args)
+        logger.info "Starting component: #{class_name}"
         yield c if block_given?
         c.run
         c
