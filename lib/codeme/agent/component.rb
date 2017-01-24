@@ -17,7 +17,7 @@ module Codeme
       end
 
       def send_event(type, body)
-        str = [type, body.size].pack("Cn") + body
+        str = [type, body.bytesize].pack("Cn") + body
         @pipe_w.write(str)
       end
 
