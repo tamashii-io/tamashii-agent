@@ -42,7 +42,7 @@ module Codeme
         else
           # unmatched response
           # discard
-          alse
+          logger.warn "WARN: un-matched response: #{res}"
         end
       end
 
