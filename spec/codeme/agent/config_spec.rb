@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe Codeme::Agent::Config do
+
   describe ".auth_type" do
     it "can be changed" do
       expect(subject.auth_type).to eq(:none)
@@ -28,13 +29,6 @@ RSpec.describe Codeme::Agent::Config do
     it "default output to STDOUT" do
       expect(subject.log_file).to eq(STDOUT)
     end
-
-    it "cannot be changed after defined" do
-      log_file = Tempfile.new.path
-      subject.log_file
-      subject.log_file(log_file)
-      expect(subject.log_file).not_to eq(log_file)
-    end
   end
 
   describe ".log_level" do
@@ -45,6 +39,30 @@ RSpec.describe Codeme::Agent::Config do
     it "can be changed" do
       subject.log_level(Logger::INFO)
       expect(subject.log_level).to eq(Logger::INFO)
+    end
+  end
+
+  describe ".env" do
+    it "default is development" do
+      expect(subject.env.development?).to be true
+    end
+
+    it "load config from environment variable" do
+      expect(ENV).to receive(:[]).with('RACK_ENV').and_return("production")
+      expect(subject.env.production?).to be true
+    end
+
+    it "can be set by config" do
+      subject.env(:production)
+      expect(subject.env.production?).to be true
+    end
+
+    it "can compare by string" do
+      expect(subject.env).to eq("development")
+    end
+
+    it "can compare by symbol" do
+      expect(subject.env).to eq(:development)
     end
   end
 

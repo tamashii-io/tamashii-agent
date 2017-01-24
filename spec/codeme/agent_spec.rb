@@ -10,7 +10,7 @@ describe Codeme::Agent do
   end
 
   it "can get logger" do
-    expect(Codeme::Agent.logger).to be_instance_of(Codeme::Agent::Logger)
+    expect(Codeme::Agent.logger).to be_instance_of(Codeme::Logger)
   end
 
 end
