@@ -1,53 +1,10 @@
-require 'json'
 require 'codeme/agent/common'
+require 'codeme/agent/request_pool/request'
+require 'codeme/agent/request_pool/response'
 
 
 module Codeme
   module Agent
-    class Request
-      attr_accessor :id
-      attr_accessor :ev_type
-      attr_accessor :ev_body
-      attr_accessor :state
-
-      STATE_PENDING = :pending
-      STATE_SENT = :sent
-
-      def initialize(ev_type, ev_body, id)
-        @ev_type = ev_type
-        @ev_body = ev_body
-        @id = id
-        @state = STATE_PENDING
-      end
-
-      def wrap_body
-        {
-          id: @id,
-          ev_body: @ev_body
-        }.to_json
-      end
-
-      def sent!
-        @state = STATE_SENT
-      end
-
-      def sent?
-        @state == STATE_SENT
-      end
-    end
-
-    class Response
-      attr_accessor :ev_type, :ev_body, :id
-
-      def initialize(ev_type, wrapped_body)
-        @ev_type = ev_type
-        data = JSON.parse(wrapped_body)
-        @id = data["id"]
-        @ev_body = data["ev_body"]
-      end
-      
-    end
-
     class RequestPool
       include Common::Loggable
       def initialize
@@ -85,7 +42,7 @@ module Codeme
         else
           # unmatched response
           # discard
-          false
+          alse
         end
       end
 

@@ -23,7 +23,7 @@ module Codeme
       def resolve(data)
         connection = self.env[:connection]
         connection.logger.debug "echo data: #{data}"
-        connection.request_pool.add_response(Response.new(self.type, data))
+        connection.request_pool.add_response(RequestPool::Response.new(self.type, data))
       end
     end
   end
@@ -208,7 +208,7 @@ module Codeme
       def process_event(ev_type, ev_body)
         case ev_type
         when EVENT_CARD_DATA
-          req = Request.new(Type::RFID_NUMBER , ev_body, ev_body)
+          req = RequestPool::Request.new(Type::RFID_NUMBER , ev_body, ev_body)
           @request_pool.add_request(req)
         end
       end
