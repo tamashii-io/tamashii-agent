@@ -1,6 +1,7 @@
 # Vim related
 *.swp
 *.swo
+.vimrc
 
 .byebug_history
 .ruby-version
