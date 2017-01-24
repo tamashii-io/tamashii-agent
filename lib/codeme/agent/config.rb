@@ -1,3 +1,4 @@
+require 'codeme/common'
 module Codeme
   module Agent
     class Config < Codeme::Config
