@@ -1,36 +1,15 @@
 require 'socket'
-
 require 'websocket/driver'
 require 'aasm'
 
 require 'codeme/common'
 
-
 require 'codeme/agent/config'
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
 
-
-module Codeme
-  module Agent
-    class SystemHandler < Handler
-      def resolve(data)
-        connection.logger.debug "echo data: #{data}"
-      end
-    end
-
-    class RFIDHandler < Handler
-      def resolve(data)
-        connection = self.env[:connection]
-        connection.logger.debug "echo data: #{data}"
-        connection.request_pool.add_response(RequestPool::Response.new(self.type, data))
-      end
-    end
-  end
-end
-
-
-
+require 'codeme/agent/handler/rfid'
+require 'codeme/agent/handler/system'
 
 module Codeme
   module Agent
@@ -81,8 +60,8 @@ module Codeme
         
         env_data = {connection: self}
         Resolver.config do
-          handle Type::REBOOT,  SystemHandler, env_data
-          handle Type::RFID_NUMBER,  RFIDHandler, env_data
+          handle Type::REBOOT,  Handler::System, env_data
+          handle Type::RFID_NUMBER,  Handler::RFID, env_data
         end
       end
 
