@@ -61,6 +61,7 @@ module Codeme
         env_data = {connection: self}
         Resolver.config do
           handle Type::REBOOT,  Handler::System, env_data
+          handle Type::POWEROFF,  Handler::System, env_data
           handle Type::RFID_NUMBER,  Handler::RFID, env_data
         end
       end
