@@ -192,6 +192,16 @@ module Codeme
           @request_pool.add_request(req)
         end
       end
+
+      def clean_up
+        super
+        if @io
+          @driver.close
+          close_socket_io
+        end
+      rescue => e
+        logger.warn "Error occured when clean up: #{e.to_s}"
+      end
     end
   end
 end
