@@ -104,7 +104,7 @@ module Codeme
 
       def send_auth_request
         # TODO: other types of auth 
-        @driver.binary(Packet.new(Type::AUTH_TOKEN, 0, [@master.serial_number,Config.token].join(",")).dump)
+        @driver.binary(Packet.new(Type::AUTH_TOKEN, 0, [Type::CLIENT[:agent], @master.serial_number,Config.token].join(",")).dump)
       end
 
       def start_web_driver
