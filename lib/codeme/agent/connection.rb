@@ -133,8 +133,10 @@ module Codeme
           msg = @io.recv_nonblock(65535)
           if msg.empty?
             # socket closed
+            logger.info "No message received from server. Connection reset"
             close_socket_io
             self.reset
+            sleep 1
           else
             @driver.parse(msg)
           end
@@ -166,7 +168,7 @@ module Codeme
       def process_packet(pkt)
         if self.auth_pending?
           if pkt.type == Type::AUTH_RESPONSE
-            if pkt.body == "0" # true
+            if pkt.body == Packet::STRING_TRUE
               @tag = pkt.tag
               self.auth_success
             else
