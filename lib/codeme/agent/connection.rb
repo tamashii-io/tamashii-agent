@@ -46,7 +46,7 @@ module Codeme
       def initialize(master, host, port)
         super()
         @master = master
-        @url = "#{Config.use_ssl ? "wss" : "ws"}://#{host}:#{port}"
+        @url = "#{Config.use_ssl ? "wss" : "ws"}://#{host}:#{port}/#{Config.entry_point}"
         self.reset
         
         @host = host
@@ -130,15 +130,21 @@ module Codeme
       def register_socket_io
         _monitor = @selector.register(@io, :r)
         _monitor.value = proc do
-          msg = @io.recv_nonblock(65535)
-          if msg.empty?
-            # socket closed
-            logger.info "No message received from server. Connection reset"
-            close_socket_io
-            self.reset
-            sleep 1
-          else
-            @driver.parse(msg)
+          begin
+            msg = @io.recv_nonblock(65535)
+            if msg.empty?
+              # socket closed
+              logger.info "No message received from server. Connection reset"
+              close_socket_io
+              self.reset
+              sleep 1
+            else
+              @driver.parse(msg)
+            end
+          rescue => e
+            logger.error "#{e.message}"
+            logger.debug "Backtrace:"
+            e.backtrace.each {|msg| logger.debug msg}
           end
         end
       end

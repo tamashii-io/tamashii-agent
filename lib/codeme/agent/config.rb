@@ -7,6 +7,7 @@ module Codeme
       register :log_file, STDOUT
       register :use_ssl, false
       register :auth_type, :none
+      register :entry_point, "/codeme"
 
       def auth_type(type = nil)
         return @auth_type ||= :none if type.nil?
