@@ -8,7 +8,7 @@ require 'codeme/agent/config'
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
 
-require 'codeme/agent/handler/rfid'
+require 'codeme/agent/handler/request_pool_response'
 require 'codeme/agent/handler/system'
 
 module Codeme
@@ -62,7 +62,7 @@ module Codeme
         Resolver.config do
           handle Type::REBOOT,  Handler::System, env_data
           handle Type::POWEROFF,  Handler::System, env_data
-          handle Type::RFID_NUMBER,  Handler::RFID, env_data
+          handle Type::RFID_RESPONSE_JSON,  Handler::RequestPoolResponse, env_data
         end
       end
 
@@ -72,7 +72,21 @@ module Codeme
 
       def handle_request_meet(req, res)
         logger.debug "Got packet: #{res.ev_type}: #{res.ev_body}"
-        @master.send_event(EVENT_BEEP, ["ok", "no"].sample)
+        case res.ev_type
+        when Type::RFID_RESPONSE_JSON
+          json = JSON.parse(res.ev_body)
+          handle_card_result(json)
+        else
+          logger.warn "Unhandled packet result: #{res.ev_type}: #{res.ev_body}"
+        end
+      end
+
+      def handle_card_result(result)
+        if result["auth"]
+          @master.send_event(EVENT_BEEP, "ok")
+        else
+          @master.send_event(EVENT_BEEP, "no")
+        end
       end
 
       def handle_send_request(req)
