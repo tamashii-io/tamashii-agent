@@ -16,6 +16,7 @@ module Codeme
         @host = host
         @port = port
         @serial_number = get_serial_number
+        logger.info "Serial number: #{@serial_number}"
         create_components
       end
 
@@ -26,7 +27,12 @@ module Codeme
             return $1
           end
         end
-        return nil
+        # Cannot get serial number
+        if Config.env == "test"
+          return "TEST_PID_#{Process.pid}"
+        else
+          return nil
+        end
       end
 
       def create_components
