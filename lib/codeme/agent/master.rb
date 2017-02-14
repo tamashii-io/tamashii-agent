@@ -61,6 +61,10 @@ module Codeme
             system_reboot
           when Codeme::Type::POWEROFF
             system_poweroff
+          when Codeme::Type::RESTART
+            system_restart
+          when Codeme::Type::UPDATE
+            logger.error "Update is not implenented"
           end
         when EVENT_CONNECTION_NOT_READY
           broadcast_event(EVENT_BEEP, "error")
@@ -77,6 +81,11 @@ module Codeme
       def system_poweroff
         logger.info "Powering Off..."
         system("poweroff &")
+      end
+
+      def system_restart
+        logger.info "Restarting..."
+        system("systemctl start codeme-agent.service &")
       end
 
       # override
