@@ -22,10 +22,12 @@ OptionParser.new do |opts|
     File.open(SYSTEM_CONFIG_FILENAME, "w") do |f|
       f.write <<-EOS
 Codeme::Agent::config do
-  auth_type :token
-  token "abc123"
   manager_host "localhost"
   manager_port 3000
+  log_file "/var/log/codeme-agent.log"
+  auth_type :token
+  token "abc123"
+
 end
       EOS
     end
