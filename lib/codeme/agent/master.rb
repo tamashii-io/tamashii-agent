@@ -59,6 +59,8 @@ module Codeme
           case ev_body.to_i
           when Codeme::Type::REBOOT
             system_reboot
+          when Codeme::Type::POWEROFF
+            system_poweroff
           end
         when EVENT_CONNECTION_NOT_READY
           broadcast_event(EVENT_BEEP, "error")
