@@ -8,8 +8,7 @@ require 'codeme/agent/config'
 require 'codeme/agent/component'
 require 'codeme/agent/request_pool'
 
-require 'codeme/agent/handler/request_pool_response'
-require 'codeme/agent/handler/system'
+require 'codeme/agent/handler'
 
 module Codeme
   module Agent
@@ -39,8 +38,8 @@ module Codeme
         end
       end
 
-
       attr_reader :url
+      attr_reader :master
       attr_reader :request_pool
 
       def initialize(master, host, port)
@@ -60,8 +59,10 @@ module Codeme
         
         env_data = {connection: self}
         Resolver.config do
-          handle Type::REBOOT,  Handler::System, env_data
-          handle Type::POWEROFF,  Handler::System, env_data
+          [Type::REBOOT, Type::POWEROFF, Type::RESTART, Type::UPDATE].each do |type|
+            handle type,  Handler::System, env_data
+          end
+          handle Type::BUZZER_SOUND,  Handler::Buzzer, env_data
           handle Type::RFID_RESPONSE_JSON,  Handler::RequestPoolResponse, env_data
         end
       end

@@ -1,11 +1,12 @@
+require 'codeme/agent/common'
 require 'codeme/agent/handler/base'
 
 module Codeme
   module Agent
     module Handler
-      class System < Base
+      class Buzzer < Base
         def resolve(data)
-          @connection.logger.debug "echo data: #{data}"
+          @master.send_event(EVENT_BEEP, data)
         end
       end
     end

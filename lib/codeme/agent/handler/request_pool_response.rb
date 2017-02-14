@@ -1,13 +1,12 @@
-require 'codeme/common'
+require 'codeme/agent/handler/base'
 require 'codeme/agent/request_pool'
 
 module Codeme
   module Agent
     module Handler
-      class RequestPoolResponse < Codeme::Handler
+      class RequestPoolResponse < Base
         def resolve(data)
-          connection = self.env[:connection]
-          connection.request_pool.add_response(RequestPool::Response.new(self.type, data))
+          @connection.request_pool.add_response(RequestPool::Response.new(self.type, data))
         end
       end
     end
