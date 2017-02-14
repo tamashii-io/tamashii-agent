@@ -8,6 +8,8 @@ module Codeme
       register :use_ssl, false
       register :auth_type, :none
       register :entry_point, "/codeme"
+      register :manager_host, "localhost"
+      register :manager_port, 3000
 
       def auth_type(type = nil)
         return @auth_type ||= :none if type.nil?
