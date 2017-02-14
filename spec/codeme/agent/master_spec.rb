@@ -57,7 +57,7 @@ RSpec.describe Codeme::Agent::Master do
   end
 
   describe "#process event" do
-    let(:master_only_events) { [described_class::EVENT_SYSTEM_COMMAND] }
+    let(:master_only_events) { [Codeme::Agent::EVENT_SYSTEM_COMMAND] }
     context "when the message should handle by master" do
       it "does not pass the event to any compoments" do
         expect(component_instance).not_to receive(:send_event)
@@ -70,9 +70,9 @@ RSpec.describe Codeme::Agent::Master do
 
     context "when the connection is not ready" do
       before do
-        subject.process_event(described_class::EVENT_CONNECTION_NOT_READY, "ABC")
+        subject.process_event(Codeme::Agent::EVENT_CONNECTION_NOT_READY, "ABC")
       end
-      it_behaves_like "broadcast to components", described_class::EVENT_BEEP, "error"
+      it_behaves_like "broadcast to components", Codeme::Agent::EVENT_BEEP, "error"
     end
 
     context "when the message is not recognized" do

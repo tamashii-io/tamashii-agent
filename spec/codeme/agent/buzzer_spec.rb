@@ -22,13 +22,13 @@ RSpec.describe Codeme::Agent::Buzzer do
 
   describe "#process_event" do
     context "when ev_type is not EVENT_BEEP" do
-      let(:ev_type){ described_class::EVENT_CARD_DATA }
+      let(:ev_type){ Codeme::Agent::EVENT_CARD_DATA }
       let(:ev_body) { "other" }
       it_behaves_like "buzzer will not react"
     end
 
     context "when ev_type is EVENT_BEEP" do
-      let(:ev_type){ described_class::EVENT_BEEP }
+      let(:ev_type){ Codeme::Agent::EVENT_BEEP }
       it "calls Buzzer#play_ok when ev_body is ok" do
         expect(ivar_buzzer).to receive(:play_ok)
         subject.process_event(ev_type, "ok")

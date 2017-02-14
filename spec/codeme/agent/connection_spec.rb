@@ -12,10 +12,12 @@ RSpec.describe Codeme::Agent::Connection do
   
   let!(:id) { rand(256) }
   let!(:ev_type) { rand(256) }
-  let(:ev_body) { "Test Body" }
+  let!(:req_ev_type) { ev_type }
+  let!(:res_ev_type) { ev_type }
+  let(:ev_body) { {auth: true}.to_json }
   let(:wrapped_body) { {id: id, ev_body: ev_body}.to_json }
-  let(:request) { Codeme::Agent::RequestPool::Request.new(ev_type, ev_body, id) }
-  let(:response) { Codeme::Agent::RequestPool::Response.new(ev_type, wrapped_body) }
+  let(:request) { Codeme::Agent::RequestPool::Request.new(req_ev_type, ev_body, id) }
+  let(:response) { Codeme::Agent::RequestPool::Response.new(res_ev_type, wrapped_body) }
 
   let(:pkt_tag) { 2 }
   let(:auth_tag) { 2 }
@@ -86,14 +88,15 @@ RSpec.describe Codeme::Agent::Connection do
 
     context "when the request is timedout" do
       it "sends a not ready event to master" do
-        expect(master).to receive(:send_event).with(described_class::EVENT_CONNECTION_NOT_READY, any_args)
+        expect(master).to receive(:send_event).with(Codeme::Agent::EVENT_CONNECTION_NOT_READY, any_args)
         subject.handle_request_timedout(request)
       end
     end
 
     context "when the request is meet" do
+      let!(:res_ev_type) { Codeme::Type::RFID_RESPONSE_JSON }
       it "send a beep event to master" do
-        expect(master).to receive(:send_event).with(described_class::EVENT_BEEP, any_args)
+        expect(master).to receive(:send_event).with(Codeme::Agent::EVENT_BEEP, any_args)
         subject.handle_request_meet(request, response)
       end
     end
@@ -104,7 +107,7 @@ RSpec.describe Codeme::Agent::Connection do
     end
 
     context "with RFID-related event" do
-      let(:ev_type) { described_class::EVENT_CARD_DATA }
+      let(:ev_type) { Codeme::Agent::EVENT_CARD_DATA }
       it "can convert EVENT_CARD_DATA to Request and put into pool" do
         expect(Codeme::Agent::RequestPool::Request).to receive(:new).with(Codeme::Type::RFID_NUMBER, ev_body, ev_body).and_return(request)
         subject.process_event(ev_type, ev_body)
@@ -112,9 +115,9 @@ RSpec.describe Codeme::Agent::Connection do
     end
 
     context "with RFID-related data" do
-      let(:pkt_type) { Codeme::Type::RFID_NUMBER }
+      let(:pkt_type) { Codeme::Type::RFID_RESPONSE_JSON }
       it "passes data to the RFID handler" do
-        expect_any_instance_of(Codeme::Agent::Handler::RFID).to receive(:resolve)
+        expect_any_instance_of(Codeme::Agent::Handler::RequestPoolResponse).to receive(:resolve)
         subject.process_packet(packet)
       end
     end

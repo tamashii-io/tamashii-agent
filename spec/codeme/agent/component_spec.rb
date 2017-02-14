@@ -2,7 +2,7 @@ require 'spec_helper'
 
 RSpec.describe Codeme::Agent::Component do
  
-  let(:ev_type) { described_class::EVENT_BEEP }
+  let(:ev_type) { Codeme::Agent::EVENT_BEEP }
   let(:ev_body) { "test body" }
   let(:dumped_ev) { [ev_type, ev_body.bytesize].pack("Cn") + ev_body }
 

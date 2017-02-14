@@ -56,7 +56,7 @@ RSpec.describe Codeme::Agent::CardReader do
   describe "#process_uid" do
     let(:uid) { Array.new(4){rand(256)}.join("-") }
     it "sends the uid as card event to master" do
-      expect(master).to receive(:send_event).with(described_class::EVENT_CARD_DATA, uid)
+      expect(master).to receive(:send_event).with(Codeme::Agent::EVENT_CARD_DATA, uid)
       subject.process_uid(uid)
     end
   end
