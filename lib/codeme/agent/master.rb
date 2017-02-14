@@ -85,7 +85,7 @@ module Codeme
 
       def system_restart
         logger.info "Restarting..."
-        system("systemctl start codeme-agent.service &")
+        system("systemctl restart codeme-agent.service &")
       end
 
       # override
