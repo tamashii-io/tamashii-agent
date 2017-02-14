@@ -55,11 +55,26 @@ module Codeme
         super
         case ev_type
         when EVENT_SYSTEM_COMMAND
+          logger.info "System command code: #{ev_body}"
+          case ev_body.to_i
+          when Codeme::Type::REBOOT
+            system_reboot
+          end
         when EVENT_CONNECTION_NOT_READY
           broadcast_event(EVENT_BEEP, "error")
         else
           broadcast_event(ev_type, ev_body)
         end
+      end
+
+      def system_reboot
+        logger.info "Rebooting..."
+        system("reboot &")
+      end
+
+      def system_poweroff
+        logger.info "Powering Off..."
+        system("poweroff &")
       end
 
       # override

@@ -1,3 +1,4 @@
+require 'codeme/agent/common'
 require 'codeme/agent/handler/base'
 
 module Codeme
@@ -5,7 +6,7 @@ module Codeme
     module Handler
       class System < Base
         def resolve(data)
-          @connection.logger.debug "echo data: #{data}"
+          @master.send_event(EVENT_SYSTEM_COMMAND, type.to_s)
         end
       end
     end
