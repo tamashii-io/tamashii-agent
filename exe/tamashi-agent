@@ -9,7 +9,7 @@ SYSTEMD_SERVICE_FILENAME = "/etc/systemd/system/tamashi-agent.service"
 
 OptionParser.new do |opts|
   opts.on("-v", "--version", "Display Tamashi::Agent version") {
-    puts "Tamashi::Manager #{Tamashi::Agent::VERSION}"
+    puts "Tamashi::Agent #{Tamashi::Agent::VERSION}"
     exit
   }
 
