@@ -5,6 +5,7 @@
 
 .byebug_history
 .ruby-version
+run_agent.sh
 
 # Gem
 /.bundle/

@@ -4,9 +4,9 @@ require 'simplecov'
 
 SimpleCov.start
 
-require "codeme/agent"
+require "tamashi/agent"
 
-Codeme::Agent.config do
+Tamashi::Agent.config do
   log_file Tempfile.new.path
   env "test"
 end
