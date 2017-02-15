@@ -25,9 +25,9 @@ Tamashi::Agent::config do
   manager_host "localhost"
   manager_port 3000
   log_file "/var/log/tamashi-agent.log"
+  log_level "info"
   auth_type :token
   token "abc123"
-
 end
       EOS
     end
@@ -41,7 +41,6 @@ After=syslog.target network.target
 Type=simple
 User=root
 PrivateTmp=yes
-ProtectSystem=full
 WorkingDirectory=/tmp
 ExecStart=/usr/local/bin/tamashi-agent -C #{SYSTEM_CONFIG_FILENAME} 
 User=root

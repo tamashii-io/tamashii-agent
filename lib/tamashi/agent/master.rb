@@ -12,7 +12,7 @@ module Tamashi
 
       def initialize(host, port)
         super()
-        logger.info "Starting Tamashi::Agent in #{Config.env} mode"
+        logger.info "Starting Tamashi::Agent #{Tamashi::Agent::VERSION} in #{Config.env} mode"
         @host = host
         @port = port
         @serial_number = get_serial_number
