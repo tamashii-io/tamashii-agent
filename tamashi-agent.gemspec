@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{The agent module for RubyConfTW checkin system.}
   spec.description   = %q{The agent module for RubyConfTW checkin system.}
-  spec.homepage      = "https://5xruby.tw"
+  spec.homepage      = "https://github.com/lctseng/tamashi-agent"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
