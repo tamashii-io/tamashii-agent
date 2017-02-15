@@ -64,7 +64,7 @@ module Tamashi
           when Tamashi::Type::RESTART
             system_restart
           when Tamashi::Type::UPDATE
-            logger.error "Update is not implenented"
+            system_update
           end
         when EVENT_CONNECTION_NOT_READY
           broadcast_event(EVENT_BEEP, "error")
@@ -86,6 +86,12 @@ module Tamashi
       def system_restart
         logger.info "Restarting..."
         system("systemctl restart tamashi-agent.service &")
+      end
+
+      def system_update
+        logger.info "Updating..."
+        system("gem update tamashi-agent")
+        system_restart
       end
 
       # override
