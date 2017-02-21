@@ -4,9 +4,9 @@ require 'simplecov'
 
 SimpleCov.start
 
-require "tamashi/agent"
+require "tamashii/agent"
 
-Tamashi::Agent.config do
+Tamashii::Agent.config do
   log_file Tempfile.new.path
   env "test"
 end

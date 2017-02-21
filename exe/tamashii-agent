@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+
+require 'tamashii/agent/version'
+require 'tamashii/agent'
+require 'optparse'
+
+SYSTEM_CONFIG_FILENAME = "/etc/tamashii-agent-config.rb"
+SYSTEMD_SERVICE_FILENAME = "/etc/systemd/system/tamashii-agent.service"
+
+OptionParser.new do |opts|
+  opts.on("-v", "--version", "Display Tamashii::Agent version") {
+    puts "Tamashii::Agent #{Tamashii::Agent::VERSION}"
+    exit
+  }
+
+  opts.on("-h", "--help", "Show this help") {
+    puts opts
+    exit
+  }
+
+  opts.on("-i", "--install-systemd", "Make this program start as systemd service. Also generates a config file at #{SYSTEM_CONFIG_FILENAME}") {
+    File.open(SYSTEM_CONFIG_FILENAME, "w") do |f|
+      f.write <<-EOS
+Tamashii::Agent::config do
+  manager_host "localhost"
+  manager_port 3000
+  log_file "/var/log/tamashii-agent.log"
+  log_level "info"
+  auth_type :token
+  token "abc123"
+end
+      EOS
+    end
+    File.open(SYSTEMD_SERVICE_FILENAME, "w") do |f|
+      f.write <<-EOD
+[Unit]
+Description=Start Tamashii Agent service
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=root
+PrivateTmp=yes
+WorkingDirectory=/tmp
+ExecStart=/usr/local/bin/tamashii-agent -C #{SYSTEM_CONFIG_FILENAME} 
+User=root
+TimeoutSec=30
+RestartSec=15s
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+      EOD
+    end
+    system("systemctl daemon-reload")
+    system("systemctl enable tamashii-agent.service")
+    system("systemctl start tamashii-agent.service")
+    exit
+  }
+
+  opts.on("-C", "--config FILE", "The external configuration file") do |config|
+    if File.exists? config
+      require config
+    end
+  end
+
+  opts.parse! ARGV
+end
+
+
+begin
+  config = Tamashii::Agent::Config
+  case config.auth_type
+  when :token
+    raise LoadError.new("Token authorization require to set token") if config.token.nil?
+  end
+  agent = Tamashii::Agent::Master.new(config.manager_host, config.manager_port)
+
+
+  Signal.trap("TERM") do
+    raise SystemExit
+  end
+  Signal.trap("INT") do
+    raise SystemExit
+  end
+
+  agent.run!
+rescue LoadError => e
+  # TODO: Improve error message
+  STDERR.puts e
+rescue SystemExit
+  agent.logger.info "Stopping"
+  agent.stop
+end
