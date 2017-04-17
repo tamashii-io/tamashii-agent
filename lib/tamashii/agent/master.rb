@@ -21,17 +21,19 @@ module Tamashii
       end
 
       def get_serial_number
+        serial = ENV['SERIAL_NUMBER']
+        serial = read_serial_from_cpuinfo if serial.nil?
+        serial = "#{Config.env}_pid_#{Process.pid}".upcase if serial.nil?
+        serial
+      end
+
+      def read_serial_from_cpuinfo
+        return nil unless File.exists?("/proc/cpuinfo")
         File.open("/proc/cpuinfo") do |f|
           content = f.read
           if content =~ /Serial\s*:\s*(\w+)/
             return $1
           end
-        end
-        # Cannot get serial number
-        if Config.env == "test"
-          return "TEST_PID_#{Process.pid}"
-        else
-          return nil
         end
       end
 
