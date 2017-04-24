@@ -1,6 +1,7 @@
 require 'socket'
 require 'websocket/driver'
 require 'aasm'
+require 'openssl'
 
 require 'tamashii/common'
 
@@ -24,11 +25,11 @@ module Tamashii
         event :connect do
           transitions from: :init, to: :connecting, after: Proc.new { logger.info "Start connecting" }
         end
-        
+
         event :auth_request do
           transitions from: :connecting, to: :auth_pending, after: Proc.new { logger.info "Sending authentication request" }
         end
-        
+
         event :auth_success do
           transitions from: :auth_pending, to: :ready, after: Proc.new { logger.info "Authentication finished. Tag = #{@tag}" }
         end
@@ -47,16 +48,16 @@ module Tamashii
         @master = master
         @url = "#{Config.use_ssl ? "wss" : "ws"}://#{host}:#{port}/#{Config.entry_point}"
         self.reset
-        
+
         @host = host
         @port = port
         @tag = 0
-        
+
         @request_pool = RequestPool.new
         @request_pool.set_handler(:request_timedout, method(:handle_request_timedout))
         @request_pool.set_handler(:request_meet, method(:handle_request_meet))
         @request_pool.set_handler(:send_request, method(:handle_send_request))
-        
+
         env_data = {connection: self}
         Resolver.config do
           [Type::REBOOT, Type::POWEROFF, Type::RESTART, Type::UPDATE].each do |type|
@@ -118,18 +119,20 @@ module Tamashii
       end
 
       def send_auth_request
-        # TODO: other types of auth 
+        # TODO: other types of auth
         @driver.binary(Packet.new(Type::AUTH_TOKEN, 0, [Type::CLIENT[:agent], @master.serial_number,Config.token].join(",")).dump)
       end
 
       def start_web_driver
-        @driver = WebSocket::Driver.client(self)
-        @driver.on :open, proc { |e| 
+        # TODO: Improve below code
+        socket = Config.use_ssl ? OpenSSL::SSL::SSLSocket.new(self) : self
+        @driver = WebSocket::Driver.client(socket)
+        @driver.on :open, proc { |e|
           logger.info "Server opened"
           self.auth_request
           send_auth_request
         }
-        @driver.on :close, proc { |e| 
+        @driver.on :close, proc { |e|
           logger.info "Server closed"
           close_socket_io
           self.reset
@@ -201,7 +204,7 @@ module Tamashii
           end
         else
           if pkt.tag == @tag || pkt.tag == 0
-            Resolver.resolve(pkt) 
+            Resolver.resolve(pkt)
           else
             logger.debug "Tag mismatch packet: tag: #{pkt.tag}, type: #{pkt.type}"
           end
