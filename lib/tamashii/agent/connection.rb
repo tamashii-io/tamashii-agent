@@ -125,8 +125,7 @@ module Tamashii
 
       def start_web_driver
         # TODO: Improve below code
-        socket = Config.use_ssl ? OpenSSL::SSL::SSLSocket.new(self) : self
-        @driver = WebSocket::Driver.client(socket)
+        @driver = WebSocket::Driver.client(self)
         @driver.on :open, proc { |e|
           logger.info "Server opened"
           self.auth_request
@@ -141,6 +140,9 @@ module Tamashii
           pkt = Packet.load(e.data)
           process_packet(pkt) if pkt
         }
+        @driver.on :error, proc { |e|
+          logger.error("#{e.message}")
+        }
         @driver.start
         self.connect
       end
@@ -149,7 +151,8 @@ module Tamashii
         _monitor = @selector.register(@io, :r)
         _monitor.value = proc do
           begin
-            msg = @io.recv_nonblock(65535)
+            msg = @io.read_nonblock(65535, exception: false)
+            next if msg = :wait_readable
             if msg.empty?
               # socket closed
               logger.info "No message received from server. Connection reset"
@@ -169,7 +172,11 @@ module Tamashii
 
       def try_create_socket
         logger.info "try to open socket..."
-        TCPSocket.new(@host, @port)
+        if Config.use_ssl
+          OpenSSL::SSL::SSLSocket.new(TCPSocket.new(@host, @port)).connect
+        else
+          TCPSocket.new(@host, @port)
+        end
       rescue
         nil
       end
