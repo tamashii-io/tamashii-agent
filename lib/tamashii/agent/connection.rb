@@ -151,9 +151,9 @@ module Tamashii
         _monitor = @selector.register(@io, :r)
         _monitor.value = proc do
           begin
-            msg = @io.recv_nonblock(4096, exception: false)
+            msg = @io.read_nonblock(4096, exception: false)
             next if msg == :wait_readable
-            if msg.empty?
+            if msg.nil?
               # socket closed
               logger.info "No message received from server. Connection reset"
               close_socket_io
