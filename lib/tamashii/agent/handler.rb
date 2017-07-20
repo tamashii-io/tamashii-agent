@@ -1,4 +1,4 @@
-require 'tamashii/agent/handler/request_pool_response'
+require 'tamashii/agent/handler/remote_response'
 require 'tamashii/agent/handler/system'
 require 'tamashii/agent/handler/buzzer'
 

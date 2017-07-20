@@ -2,19 +2,53 @@ require 'socket'
 require 'websocket/driver'
 require 'aasm'
 require 'openssl'
+require 'json'
+require 'concurrent'
 
 require 'tamashii/common'
 
 require 'tamashii/agent/config'
 require 'tamashii/agent/component'
-require 'tamashii/agent/request_pool'
 
 require 'tamashii/agent/handler'
 
 module Tamashii
   module Agent
     class Connection < Component
+
+      class RequestTimeoutError < RuntimeError; end
+
+      class RequestObserver
+        include Common::Loggable
+        def initialize(connection, id, ev_type, ev_body, future)
+          @connection = connection
+          @id = id
+          @ev_type = ev_type
+          @ev_body = ev_body
+          @future = future
+        end
+
+        def update(time, ev_data, reason)
+          if @future.fulfilled?
+            res_ev_type = ev_data[:ev_type]
+            res_ev_body = ev_data[:ev_body]
+            case res_ev_type
+            when Type::RFID_RESPONSE_JSON
+              logger.debug "Handled: #{res_ev_type}: #{res_ev_body}"
+              @connection.handle_card_result(JSON.parse(res_ev_body))
+            else
+              logger.warn "Unhandled packet result: #{res_ev_type}: #{res_ev_body}"
+            end
+          else
+            logger.error "#{@id} Failed with #{reason}"
+            @connection.handle_request_timedout(@ev_type, @ev_body)
+          end
+        end
+      end
+
       include AASM
+
+      TIMEOUT = 3
 
       aasm do
         state :init, initial: true
@@ -41,7 +75,6 @@ module Tamashii
 
       attr_reader :url
       attr_reader :master
-      attr_reader :request_pool
 
       def initialize(master, host, port)
         super()
@@ -53,10 +86,7 @@ module Tamashii
         @port = port
         @tag = 0
 
-        @request_pool = RequestPool.new
-        @request_pool.set_handler(:request_timedout, method(:handle_request_timedout))
-        @request_pool.set_handler(:request_meet, method(:handle_request_meet))
-        @request_pool.set_handler(:send_request, method(:handle_send_request))
+        @future_ivar_pool = Concurrent::Map.new
 
         env_data = {connection: self}
         Resolver.config do
@@ -64,12 +94,12 @@ module Tamashii
             handle type,  Handler::System, env_data
           end
           handle Type::BUZZER_SOUND,  Handler::Buzzer, env_data
-          handle Type::RFID_RESPONSE_JSON,  Handler::RequestPoolResponse, env_data
+          handle Type::RFID_RESPONSE_JSON,  Handler::RemoteResponse, env_data
         end
       end
 
-      def handle_request_timedout(req)
-        @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready for #{req.ev_type}:#{req.ev_body}")
+      def handle_request_timedout(ev_type, ev_body)
+        @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready for #{ev_type}:#{ev_body}")
       end
 
       def handle_request_meet(req, res)
@@ -91,9 +121,9 @@ module Tamashii
         end
       end
 
-      def handle_send_request(req)
+      def handle_send_request(ev_type, ev_body)
         if self.ready?
-          @driver.binary(Packet.new(req.ev_type, @tag, req.wrap_body).dump)
+          @driver.binary(Packet.new(ev_type, @tag, ev_body).dump)
           true
         else
           false
@@ -103,7 +133,6 @@ module Tamashii
       # override
       def worker_loop
         loop do
-          @request_pool.update
           ready = @selector.select(1)
           ready.each { |m| m.value.call } if ready
           if @io.nil?
@@ -221,8 +250,57 @@ module Tamashii
       def process_event(ev_type, ev_body)
         case ev_type
         when EVENT_CARD_DATA
-          req = RequestPool::Request.new(Type::RFID_NUMBER , ev_body, ev_body)
-          @request_pool.add_request(req)
+          id = ev_body
+          wrapped_body = {
+            id: ev_body,
+            ev_body: ev_body
+          }.to_json
+          new_remote_request(id, Type::RFID_NUMBER, wrapped_body)
+        end
+      end
+
+      def new_remote_request(id, ev_type, ev_body)
+        # enqueue if not exists
+        if !@future_ivar_pool[id]
+          req = Concurrent::Future.new do
+            start_time = Time.now
+            # Create IVar for store result
+            ivar = Concurrent::IVar.new
+            @future_ivar_pool[id] = ivar
+            # Schedule to get the result
+            schedule_runner = proc do |id, times|
+              logger.debug "Schedule send attemp #{id} : #{times + 1} time(s)"
+              if handle_send_request(ev_type, ev_body)
+                # Request sent, do nothing
+              else
+                if Time.now - start_time < TIMEOUT
+                  # Re-schedule self
+                  logger.warn "Reschedule #{id} after 1 sec"
+                  Concurrent::ScheduledTask.execute(1, args: [id, times + 1], &schedule_runner)
+                else
+                  # This job is expired. Do nothing
+                  logger.warn "Abort scheduling #{id}"
+                end
+              end
+            end
+            Concurrent::ScheduledTask.execute(0, args: [id, 0], &schedule_runner)
+            # Wait for result
+            if result = ivar.value(TIMEOUT)
+              # IVar is already removed from pool
+              result
+            else
+              # Manually remove IVar
+              # Any fulfill at this point is useless
+              logger.error "Timeout when getting IVar for #{id}"
+              @future_ivar_pool.delete(id)
+              raise RequestTimeoutError, "Request Timeout"
+            end
+          end
+          req.add_observer(RequestObserver.new(self, id, ev_type, ev_body, req))
+          req.execute
+          logger.debug "Request created: #{id}"
+        else
+          logger.warn "Duplicated id: #{id}, ignored"
         end
       end
 
@@ -234,6 +312,20 @@ module Tamashii
         end
       rescue => e
         logger.warn "Error occured when clean up: #{e.to_s}"
+      end
+
+      # When data is back 
+      def handle_remote_response(ev_type, wrapped_ev_body)
+        logger.debug "Remote packet back: #{ev_type} #{wrapped_ev_body}"
+        result = JSON.parse(wrapped_ev_body)
+        id = result["id"]
+        ev_body = result["ev_body"]
+        # fetch ivar and delete it
+        if ivar = @future_ivar_pool.delete(id)
+          ivar.set(ev_type: ev_type, ev_body: ev_body)
+        else
+          logger.warn "IVar #{id} not in pool"
+        end
       end
     end
   end

@@ -43,4 +43,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "pi_piper"
   spec.add_runtime_dependency "mfrc522"
   spec.add_runtime_dependency "aasm"
+  spec.add_runtime_dependency "concurrent-ruby"
 end
