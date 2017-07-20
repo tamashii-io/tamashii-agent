@@ -6,7 +6,7 @@ module Tamashii
     module Handler
       class Buzzer < Base
         def resolve(data)
-          @master.send_event(EVENT_BEEP, data)
+          @master.send_event(Event.new(EVENT_BEEP, data))
         end
       end
     end

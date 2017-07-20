@@ -53,12 +53,12 @@ module Tamashii
       end
 
       # override
-      def process_event(ev_type, ev_body)
+      def process_event(event)
         super
-        case ev_type
+        case event.type
         when EVENT_SYSTEM_COMMAND
-          logger.info "System command code: #{ev_body}"
-          case ev_body.to_i
+          logger.info "System command code: #{event.body}"
+          case event.body.to_i
           when Tamashii::Type::REBOOT
             system_reboot
           when Tamashii::Type::POWEROFF
@@ -69,9 +69,9 @@ module Tamashii
             system_update
           end
         when EVENT_CONNECTION_NOT_READY
-          broadcast_event(EVENT_BEEP, "error")
+          broadcast_event(Event.new(EVENT_BEEP, "error"))
         else
-          broadcast_event(ev_type, ev_body)
+          broadcast_event(event)
         end
       end
 
@@ -105,9 +105,9 @@ module Tamashii
       end
 
 
-      def broadcast_event(ev_type, ev_body)
+      def broadcast_event(event)
         @components.each_value do |c|
-          c.send_event(ev_type, ev_body)
+          c.send_event(event)
         end
       end
     end

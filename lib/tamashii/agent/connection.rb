@@ -4,6 +4,7 @@ require 'aasm'
 require 'openssl'
 require 'json'
 require 'concurrent'
+require 'nio'
 
 require 'tamashii/common'
 
@@ -87,8 +88,13 @@ module Tamashii
         @tag = 0
 
         @future_ivar_pool = Concurrent::Map.new
+        @driver_lock = Mutex.new
 
         setup_resolver
+      end
+
+      def create_selector
+        @selector = NIO::Selector.new
       end
 
       def setup_resolver
@@ -103,28 +109,41 @@ module Tamashii
       end
 
       def on_request_timeout(ev_type, ev_body)
-        @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready for #{ev_type}:#{ev_body}")
+        @master.send_event(Event.new(EVENT_CONNECTION_NOT_READY, "Connection not ready for #{ev_type}:#{ev_body}"))
       end
 
       def handle_card_result(result)
         if result["auth"]
-          @master.send_event(EVENT_BEEP, "ok")
+          @master.send_event(Event.new(EVENT_BEEP, "ok"))
         else
-          @master.send_event(EVENT_BEEP, "no")
+          @master.send_event(Event.new(EVENT_BEEP, "no"))
         end
       end
 
       def try_send_request(ev_type, ev_body)
         if self.ready?
-          @driver.binary(Packet.new(ev_type, @tag, ev_body).dump)
+          @driver_lock.synchronize do
+            @driver.binary(Packet.new(ev_type, @tag, ev_body).dump)
+          end
           true
         else
           false
         end
       end
 
-      # override
-      def worker_loop
+      def stop_threads
+        super
+        @websocket_thr.exit if @websocket_thr
+        @websocket_thr = nil
+      end
+
+      def run
+        super
+        @websocket_thr = Thread.start { run_websocket_loop }
+      end
+
+      def run_websocket_loop
+        create_selector
         loop do
           ready = @selector.select(1)
           ready.each { |m| m.value.call } if ready
@@ -240,13 +259,14 @@ module Tamashii
         end
       end
 
-      def process_event(ev_type, ev_body)
-        case ev_type
+      # override
+      def process_event(event)
+        case event.type
         when EVENT_CARD_DATA
-          id = ev_body
+          id = event.body
           wrapped_body = {
-            id: ev_body,
-            ev_body: ev_body
+            id: id,
+            ev_body: event.body
           }.to_json
           new_remote_request(id, Type::RFID_NUMBER, wrapped_body)
         end

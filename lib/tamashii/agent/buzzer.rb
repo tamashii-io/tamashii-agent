@@ -10,11 +10,11 @@ module Tamashii
         logger.debug "Using buzzer instance: #{@buzzer.class}"
       end
 
-      def process_event(ev_type, ev_body)
-        case ev_type
+      def process_event(event)
+        case event.type
         when EVENT_BEEP
-          logger.debug "Beep: #{ev_body}"
-          case ev_body
+          logger.debug "Beep: #{event.body}"
+          case event.body
           when "ok"
             @buzzer.play_ok
           when "no"
