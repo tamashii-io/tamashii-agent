@@ -1,6 +1,7 @@
 require 'mfrc522'
 
 require 'tamashii/agent/component'
+require 'tamashii/agent/event'
 require 'tamashii/agent/adapter/card_reader'
 
 
@@ -49,7 +50,7 @@ module Tamashii
 
       def process_uid(uid)
         logger.info "New card detected, UID: #{uid}"
-        @master.send_event(Event.new(EVENT_CARD_DATA, uid))
+        @master.send_event(Event.new(Event::CARD_DATA, uid))
       end
 
       # override

@@ -1,6 +1,7 @@
 require 'tamashii/agent/connection'
 require 'tamashii/agent/buzzer'
 require 'tamashii/agent/card_reader'
+require 'tamashii/agent/event'
 
 require 'thread'
 
@@ -56,7 +57,7 @@ module Tamashii
       def process_event(event)
         super
         case event.type
-        when EVENT_SYSTEM_COMMAND
+        when Event::SYSTEM_COMMAND
           logger.info "System command code: #{event.body}"
           case event.body.to_i
           when Tamashii::Type::REBOOT
@@ -68,8 +69,8 @@ module Tamashii
           when Tamashii::Type::UPDATE
             system_update
           end
-        when EVENT_CONNECTION_NOT_READY
-          broadcast_event(Event.new(EVENT_BEEP, "error"))
+        when Event::CONNECTION_NOT_READY
+          broadcast_event(Event.new(Event::BEEP, "error"))
         else
           broadcast_event(event)
         end

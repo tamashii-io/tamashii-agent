@@ -9,6 +9,7 @@ require 'nio'
 require 'tamashii/common'
 
 require 'tamashii/agent/config'
+require 'tamashii/agent/event'
 require 'tamashii/agent/component'
 
 require 'tamashii/agent/handler'
@@ -109,14 +110,14 @@ module Tamashii
       end
 
       def on_request_timeout(ev_type, ev_body)
-        @master.send_event(Event.new(EVENT_CONNECTION_NOT_READY, "Connection not ready for #{ev_type}:#{ev_body}"))
+        @master.send_event(Event.new(Event::CONNECTION_NOT_READY, "Connection not ready for #{ev_type}:#{ev_body}"))
       end
 
       def handle_card_result(result)
         if result["auth"]
-          @master.send_event(Event.new(EVENT_BEEP, "ok"))
+          @master.send_event(Event.new(Event::BEEP, "ok"))
         else
-          @master.send_event(Event.new(EVENT_BEEP, "no"))
+          @master.send_event(Event.new(Event::BEEP, "no"))
         end
       end
 
@@ -262,7 +263,7 @@ module Tamashii
       # override
       def process_event(event)
         case event.type
-        when EVENT_CARD_DATA
+        when Event::CARD_DATA
           id = event.body
           wrapped_body = {
             id: id,

@@ -1,4 +1,5 @@
 require 'tamashii/agent/component'
+require 'tamashii/agent/event'
 require 'tamashii/agent/adapter/buzzer'
 
 module Tamashii
@@ -12,7 +13,7 @@ module Tamashii
 
       def process_event(event)
         case event.type
-        when EVENT_BEEP
+        when Event::BEEP
           logger.debug "Beep: #{event.body}"
           case event.body
           when "ok"
