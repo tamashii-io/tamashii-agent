@@ -41,7 +41,7 @@ module Tamashii
             end
           else
             logger.error "#{@id} Failed with #{reason}"
-            @connection.handle_request_timedout(@ev_type, @ev_body)
+            @connection.on_request_timeout(@ev_type, @ev_body)
           end
         end
       end
@@ -88,6 +88,10 @@ module Tamashii
 
         @future_ivar_pool = Concurrent::Map.new
 
+        setup_resolver
+      end
+
+      def setup_resolver
         env_data = {connection: self}
         Resolver.config do
           [Type::REBOOT, Type::POWEROFF, Type::RESTART, Type::UPDATE].each do |type|
@@ -98,19 +102,8 @@ module Tamashii
         end
       end
 
-      def handle_request_timedout(ev_type, ev_body)
+      def on_request_timeout(ev_type, ev_body)
         @master.send_event(EVENT_CONNECTION_NOT_READY, "Connection not ready for #{ev_type}:#{ev_body}")
-      end
-
-      def handle_request_meet(req, res)
-        logger.debug "Got packet: #{res.ev_type}: #{res.ev_body}"
-        case res.ev_type
-        when Type::RFID_RESPONSE_JSON
-          json = JSON.parse(res.ev_body)
-          handle_card_result(json)
-        else
-          logger.warn "Unhandled packet result: #{res.ev_type}: #{res.ev_body}"
-        end
       end
 
       def handle_card_result(result)
@@ -121,7 +114,7 @@ module Tamashii
         end
       end
 
-      def handle_send_request(ev_type, ev_body)
+      def try_send_request(ev_type, ev_body)
         if self.ready?
           @driver.binary(Packet.new(ev_type, @tag, ev_body).dump)
           true
@@ -259,45 +252,54 @@ module Tamashii
         end
       end
 
+      def create_request_scheduler_task(id, ev_type, ev_body)
+        start_time = Time.now
+        schedule_runner = proc do |id, times|
+          logger.debug "Schedule send attemp #{id} : #{times + 1} time(s)"
+          if try_send_request(ev_type, ev_body)
+            # Request sent, do nothing
+            logger.debug "Request sent for id = #{id}"
+          else
+            if Time.now - start_time < TIMEOUT
+              # Re-schedule self
+              logger.warn "Reschedule #{id} after 1 sec"
+              Concurrent::ScheduledTask.execute(1, args: [id, times + 1], &schedule_runner)
+            else
+              # This job is expired. Do nothing
+              logger.warn "Abort scheduling #{id}"
+            end
+          end
+        end
+        Concurrent::ScheduledTask.execute(0, args: [id, 0], &schedule_runner)
+      end
+
+      def create_request_async(id, ev_type, ev_body)
+        req = Concurrent::Future.new do
+          # Create IVar for store result
+          ivar = Concurrent::IVar.new
+          @future_ivar_pool[id] = ivar
+          # Schedule to get the result
+          create_request_scheduler_task(id, ev_type, ev_body)
+          # Wait for result
+          if result = ivar.value(TIMEOUT)
+            # IVar is already removed from pool
+            result
+          else
+            # Manually remove IVar
+            # Any fulfill at this point is useless
+            logger.error "Timeout when getting IVar for #{id}"
+            @future_ivar_pool.delete(id)
+            raise RequestTimeoutError, "Request Timeout"
+          end
+        end
+        req.add_observer(RequestObserver.new(self, id, ev_type, ev_body, req))
+        req.execute
+      end
+
       def new_remote_request(id, ev_type, ev_body)
         # enqueue if not exists
         if !@future_ivar_pool[id]
-          req = Concurrent::Future.new do
-            start_time = Time.now
-            # Create IVar for store result
-            ivar = Concurrent::IVar.new
-            @future_ivar_pool[id] = ivar
-            # Schedule to get the result
-            schedule_runner = proc do |id, times|
-              logger.debug "Schedule send attemp #{id} : #{times + 1} time(s)"
-              if handle_send_request(ev_type, ev_body)
-                # Request sent, do nothing
-              else
-                if Time.now - start_time < TIMEOUT
-                  # Re-schedule self
-                  logger.warn "Reschedule #{id} after 1 sec"
-                  Concurrent::ScheduledTask.execute(1, args: [id, times + 1], &schedule_runner)
-                else
-                  # This job is expired. Do nothing
-                  logger.warn "Abort scheduling #{id}"
-                end
-              end
-            end
-            Concurrent::ScheduledTask.execute(0, args: [id, 0], &schedule_runner)
-            # Wait for result
-            if result = ivar.value(TIMEOUT)
-              # IVar is already removed from pool
-              result
-            else
-              # Manually remove IVar
-              # Any fulfill at this point is useless
-              logger.error "Timeout when getting IVar for #{id}"
-              @future_ivar_pool.delete(id)
-              raise RequestTimeoutError, "Request Timeout"
-            end
-          end
-          req.add_observer(RequestObserver.new(self, id, ev_type, ev_body, req))
-          req.execute
+          create_request_async(id, ev_type, ev_body)
           logger.debug "Request created: #{id}"
         else
           logger.warn "Duplicated id: #{id}, ignored"
