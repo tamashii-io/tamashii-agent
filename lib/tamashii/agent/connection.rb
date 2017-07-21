@@ -271,25 +271,29 @@ module Tamashii
         end
       end
 
-      def create_request_scheduler_task(id, ev_type, ev_body)
-        start_time = Time.now
-        schedule_runner = proc do |id, times|
-          logger.debug "Schedule send attemp #{id} : #{times + 1} time(s)"
-          if try_send_request(ev_type, ev_body)
-            # Request sent, do nothing
-            logger.debug "Request sent for id = #{id}"
+      def schedule_task_runner(id, ev_type, ev_body, start_time, times)
+        logger.debug "Schedule send attemp #{id} : #{times + 1} time(s)"
+        if try_send_request(ev_type, ev_body)
+          # Request sent, do nothing
+          logger.debug "Request sent for id = #{id}"
+        else
+          if Time.now - start_time < Config.connection_timeout
+            # Re-schedule self
+            logger.warn "Reschedule #{id} after 1 sec"
+            schedule_next_task(1, id,  ev_type, ev_body, start_time, times + 1)
           else
-            if Time.now - start_time < Config.connection_timeout
-              # Re-schedule self
-              logger.warn "Reschedule #{id} after 1 sec"
-              Concurrent::ScheduledTask.execute(1, args: [id, times + 1], &schedule_runner)
-            else
-              # This job is expired. Do nothing
-              logger.warn "Abort scheduling #{id}"
-            end
+            # This job is expired. Do nothing
+            logger.warn "Abort scheduling #{id}"
           end
         end
-        Concurrent::ScheduledTask.execute(0, args: [id, 0], &schedule_runner)
+      end
+
+      def schedule_next_task(interval, id, ev_type, ev_body, start_time, times)
+        Concurrent::ScheduledTask.execute(interval, args: [id, ev_type, ev_body, start_time, times], &method(:schedule_task_runner))
+      end
+
+      def create_request_scheduler_task(id, ev_type, ev_body)
+        schedule_next_task(0, id, ev_type, ev_body, Time.now, 0)
       end
 
       def create_request_async(id, ev_type, ev_body)
@@ -313,6 +317,7 @@ module Tamashii
         end
         req.add_observer(RequestObserver.new(self, id, ev_type, ev_body, req))
         req.execute
+        req
       end
 
       def new_remote_request(id, ev_type, ev_body)

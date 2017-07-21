@@ -15,6 +15,10 @@ module Tamashii
         @body = body
         self.freeze
       end
+
+      def ==(other)
+        @type == other.type && @body == other.body
+      end
     end
   end
 end
