@@ -9,21 +9,25 @@ RSpec.describe Tamashii::Agent::Connection do
     allow(obj).to receive(:send_event)
     obj
   }
-  
+
   let!(:id) { rand(256) }
   let!(:ev_type) { rand(256) }
   let!(:req_ev_type) { ev_type }
   let!(:res_ev_type) { ev_type }
   let(:ev_body) { {auth: true}.to_json }
-  let(:wrapped_body) { {id: id, ev_body: ev_body}.to_json }
-  let(:request) { Tamashii::Agent::RequestPool::Request.new(req_ev_type, ev_body, id) }
-  let(:response) { Tamashii::Agent::RequestPool::Response.new(res_ev_type, wrapped_body) }
+  let(:wrapped_ev_body) { {id: id, ev_body: ev_body}.to_json }
+  let(:wrapped_ev_body_response) { {id: id, ev_body: '{"auth":true}'}.to_json }
+
+  let(:agent_ev_type) { Tamashii::Agent::Event::CARD_DATA }
+  let(:tamashii_ev_type) { Tamashii::Type::RFID_NUMBER }
 
   let(:pkt_tag) { 2 }
   let(:auth_tag) { 2 }
   let(:pkt_type) { 10 }
-  let(:pkt_body) { wrapped_body }
+  let(:pkt_body) { wrapped_ev_body }
   let(:packet) { Tamashii::Packet.new(pkt_type, pkt_tag, pkt_body) }
+
+  let(:future_ivar_pool) { subject.instance_variable_get(:@future_ivar_pool) }
 
   let(:fake_io) {
     r, w = IO.pipe
@@ -34,15 +38,15 @@ RSpec.describe Tamashii::Agent::Connection do
 
   context "when auth and connection is established" do
     let!(:ws_instance) do
-        driver = double('ws driver')
-        allow(driver).to receive(:on)
-        allow(driver).to receive(:start)
-        allow(driver).to receive(:parse)
-        allow(driver).to receive(:binary)
-        driver
+      driver = double('ws driver')
+      allow(driver).to receive(:on)
+      allow(driver).to receive(:start)
+      allow(driver).to receive(:parse)
+      allow(driver).to receive(:binary)
+      driver
     end
     before do 
-      
+
       allow(subject).to receive(:ready?).and_return(true)
       allow(subject).to receive(:auth_pending?).and_return(false)
       allow(subject).to receive(:connecting?).and_return(false)
@@ -88,37 +92,127 @@ RSpec.describe Tamashii::Agent::Connection do
 
     context "when the request is timedout" do
       it "sends a not ready event to master" do
-        expect(master).to receive(:send_event).with(Tamashii::Agent::EVENT_CONNECTION_NOT_READY, any_args)
-        subject.handle_request_timedout(request)
-      end
-    end
-
-    context "when the request is meet" do
-      let!(:res_ev_type) { Tamashii::Type::RFID_RESPONSE_JSON }
-      it "send a beep event to master" do
-        expect(master).to receive(:send_event).with(Tamashii::Agent::EVENT_BEEP, any_args)
-        subject.handle_request_meet(request, response)
+        expect(master).to receive(:send_event).with(event_with_type_is(Tamashii::Agent::Event::CONNECTION_NOT_READY))
+        subject.on_request_timeout(ev_type, ev_body)
       end
     end
 
     it "can send the request to ws driver" do
       expect(ws_instance).to receive((:binary))
-      subject.handle_send_request(request)
+      subject.try_send_request(ev_type, wrapped_ev_body)
     end
 
     context "with RFID-related event" do
-      let(:ev_type) { Tamashii::Agent::EVENT_CARD_DATA }
-      it "can convert EVENT_CARD_DATA to Request and put into pool" do
-        expect(Tamashii::Agent::RequestPool::Request).to receive(:new).with(Tamashii::Type::RFID_NUMBER, ev_body, ev_body).and_return(request)
-        subject.process_event(ev_type, ev_body)
+      let(:ev_body) { id }
+
+      describe "#process_event" do
+        it "will request to create a new remote request with Type::RFID_NUMBER" do
+          expect(subject).to receive(:new_remote_request).with(id, Tamashii::Type::RFID_NUMBER, wrapped_ev_body)
+          subject.process_event(Tamashii::Agent::Event.new(agent_ev_type, ev_body))
+        end
+      end
+
+      describe "#new_remote_request" do
+        context "request is not duplicate" do
+          it "will create a new async request" do
+            expect(future_ivar_pool[id]).to be_nil
+            expect(subject).to receive(:create_request_async).with(id, tamashii_ev_type, wrapped_ev_body)
+            subject.new_remote_request(id, tamashii_ev_type, wrapped_ev_body)
+          end
+        end
+
+        context "request is duplicate" do
+          before do
+            future_ivar_pool[id] = Concurrent::IVar.new
+          end
+          it "will not create a new async request" do
+            expect(future_ivar_pool[id]).not_to be_nil
+            expect(subject).not_to receive(:create_request_async).with(id, tamashii_ev_type, wrapped_ev_body)
+            subject.new_remote_request(id, tamashii_ev_type, wrapped_ev_body)
+          end
+        end
+      end
+
+      describe "#create_request_async" do
+        before do
+          expect(subject).to receive(:create_request_scheduler_task).with(any_args)
+        end
+
+        context "when it is fulfilled" do
+          let(:res_ev_type) { Tamashii::Type::RFID_RESPONSE_JSON }
+          before do
+            allow(Tamashii::Agent::Config).to receive(:connection_timeout).and_return(999)
+          end
+          it "will call #handle_card_result" do
+            expect(subject).to receive(:handle_card_result)
+            subject.create_request_async(id, tamashii_ev_type, wrapped_ev_body)
+            # Wait for IVar to be place in pool
+            while(!future_ivar_pool[id])
+              sleep 0.1
+            end
+            subject.handle_remote_response(res_ev_type, wrapped_ev_body_response)
+            # Wait for future to continue
+            sleep 0.5
+          end
+        end
+  
+        context "when it timeout" do
+          before do
+            allow(Tamashii::Agent::Config).to receive(:connection_timeout).and_return(0)
+          end
+          it "will call #on_request_timeout" do 
+            expect(subject).to receive(:on_request_timeout).with(tamashii_ev_type, wrapped_ev_body)
+            subject.create_request_async(id, tamashii_ev_type, wrapped_ev_body)
+            sleep 0.1
+          end
+        end
       end
     end
 
-    context "with RFID-related data" do
-      let(:pkt_type) { Tamashii::Type::RFID_RESPONSE_JSON }
-      it "passes data to the RFID handler" do
-        expect_any_instance_of(Tamashii::Agent::Handler::RequestPoolResponse).to receive(:resolve)
-        subject.process_packet(packet)
+    describe "#schedule_task_runner" do
+      shared_examples "will schedule again" do
+        it do
+          expect(subject).to receive(:schedule_next_task)
+          start_time = Time.now - 1 # assume the task is schedule in the past 
+          subject.schedule_task_runner(id, tamashii_ev_type, wrapped_ev_body, start_time, 0)
+        end
+      end
+
+      shared_examples "will not schedule again" do
+        it do
+          expect(subject).not_to receive(:schedule_next_task)
+          start_time = Time.now - 1 # assume the task is schedule in the past 
+          subject.schedule_task_runner(id, tamashii_ev_type, wrapped_ev_body, start_time, 0)
+        end
+      end
+
+      before do
+        allow(Concurrent::ScheduledTask).to receive(:execute)
+      end
+      context "when #try_send_request returns true" do
+        before do 
+          allow(subject).to receive(:try_send_request).and_return(true)
+        end
+        it_behaves_like "will not schedule again"
+      end
+
+      context "when #try_send_request returns false" do
+        before do 
+          allow(subject).to receive(:try_send_request).and_return(false) 
+        end
+        context "when we still have time" do
+          before do
+            allow(Tamashii::Agent::Config).to receive(:connection_timeout).and_return(999)
+          end
+          it_behaves_like "will schedule again"
+        end
+
+        context "when we are run out of time" do
+          before do
+            allow(Tamashii::Agent::Config).to receive(:connection_timeout).and_return(0)
+          end
+          it_behaves_like "will not schedule again"
+        end
       end
     end
 
@@ -133,7 +227,7 @@ RSpec.describe Tamashii::Agent::Connection do
       let(:pkt_type) { Tamashii::Type::REBOOT }
       it_behaves_like "handle system packet"
     end
-    
+
     context "with async system event: POWEROFF" do
       let(:pkt_type) { Tamashii::Type::POWEROFF }
       it_behaves_like "handle system packet"
@@ -143,8 +237,8 @@ RSpec.describe Tamashii::Agent::Connection do
   end
 
   shared_examples "it will not start data process" do
-    it "will not send the packet requested by request_pool" do
-      expect(subject.handle_send_request(request)).to be false
+    it "will not send the packet request" do
+      expect(subject.try_send_request(ev_type, wrapped_ev_body)).to be false
     end
   end
 
@@ -154,9 +248,9 @@ RSpec.describe Tamashii::Agent::Connection do
       allow(subject).to receive(:auth_pending?).and_return(true)
       allow(subject).to receive(:connecting?).and_return(false)
     end
-    
+
     it_behaves_like "it will not start data process"
-    
+
     context "when packet is broadcasting" do
       let(:pkt_tag) { 0 }
       it "will not resolve it" do

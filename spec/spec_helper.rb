@@ -11,3 +11,6 @@ Tamashii::Agent.config do
   env "test"
 end
 
+RSpec::Matchers.define :event_with_type_is do |event_type|
+  match { |actual| actual.type == event_type }
+end

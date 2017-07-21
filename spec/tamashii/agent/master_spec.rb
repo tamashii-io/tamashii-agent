@@ -9,6 +9,7 @@ RSpec.describe Tamashii::Agent::Master do
 
   let(:ev_type) { 1 }
   let(:ev_body) { "ABC" }
+  let(:event) { Tamashii::Agent::Event.new(ev_type, ev_body) }
 
   let!(:component_instance) do
     obj = double()
@@ -22,9 +23,9 @@ RSpec.describe Tamashii::Agent::Master do
 
   subject { described_class.new(serv_host, serv_port) }
 
-  shared_examples "broadcast to components" do |arg_ev_type, arg_ev_body|
+  shared_examples "broadcast to components" do |arg_event|
     it "let all component receive same events" do
-      expect(component_instance).to have_received(:send_event).with(arg_ev_type, arg_ev_body).exactly(ivar_components.size).times
+      expect(component_instance).to have_received(:send_event).with(arg_event).exactly(ivar_components.size).times
     end
   end
 
@@ -57,30 +58,30 @@ RSpec.describe Tamashii::Agent::Master do
   end
 
   describe "#process event" do
-    let(:master_only_events) { [Tamashii::Agent::EVENT_SYSTEM_COMMAND] }
+    let(:master_only_events) { [Tamashii::Agent::Event::SYSTEM_COMMAND] }
     context "when the message should handle by master" do
       it "does not pass the event to any compoments" do
         expect(component_instance).not_to receive(:send_event)
         expect(subject).not_to receive(:broadcast_event)
-        master_only_events.each do |ev|
-          subject.process_event(ev, ev_body)
+        master_only_events.each do |ev_type|
+          subject.process_event(Tamashii::Agent::Event.new(ev_type, ev_body))
         end
       end
     end
 
     context "when the connection is not ready" do
       before do
-        subject.process_event(Tamashii::Agent::EVENT_CONNECTION_NOT_READY, "ABC")
+        subject.process_event(Tamashii::Agent::Event.new(Tamashii::Agent::Event::CONNECTION_NOT_READY, "ABC"))
       end
-      it_behaves_like "broadcast to components", Tamashii::Agent::EVENT_BEEP, "error"
+      it_behaves_like "broadcast to components", Tamashii::Agent::Event.new(Tamashii::Agent::Event::BEEP, "error")
     end
 
     context "when the message is not recognized" do
       let(:component_instance) { spy('component') }
       before do 
-        subject.process_event(987654321, "ABC")
+        subject.process_event(Tamashii::Agent::Event.new(987654321, "ABC"))
       end
-      it_behaves_like "broadcast to components", 987654321, "ABC"
+      it_behaves_like "broadcast to components", Tamashii::Agent::Event.new(987654321, "ABC")
     end
   end
 
