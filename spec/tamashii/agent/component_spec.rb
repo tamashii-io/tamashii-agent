@@ -2,41 +2,70 @@ require 'spec_helper'
 
 RSpec.describe Tamashii::Agent::Component do
  
-  let(:ev_type) { Tamashii::Agent::EVENT_BEEP }
+  let(:ev_type) { Tamashii::Agent::Event::BEEP }
   let(:ev_body) { "test body" }
-  let(:dumped_ev) { [ev_type, ev_body.bytesize].pack("Cn") + ev_body }
+  let(:event) { Tamashii::Agent::Event.new(ev_type, ev_body) }
+  let(:event_queue) { subject.instance_variable_get(:@event_queue) }
 
   describe '#send_event' do
-    it "write a event data into pipe, that can be read" do
-      pipe_r = subject.instance_variable_get(:@pipe_r)
-      subject.send_event(ev_type, ev_body)
-      expect(pipe_r.read(dumped_ev.bytesize)).to eq dumped_ev
+    it "can be called with a event, which can be checked right after" do
+      subject.send_event(event)
+      expect(subject.check_new_event).to eq event
     end
   end
 
-  describe '#receive_event' do
-    it "reads a event in pipe and call #process_event" do
-      pipe_w = subject.instance_variable_get(:@pipe_w)
-      pipe_w.write dumped_ev
-      expect(subject).to receive(:process_event).with(ev_type, ev_body)
-      subject.receive_event
+  describe '#check_new_event' do
+    context "event queue is empty" do
+      it "returns nil when non_block=true" do
+        expect(event_queue.size).to be 0
+        expect(subject.check_new_event(true)).to be_nil
+      end
+    end
+
+    context "event queue is not empty" do
+      it "pulls a existing event out from event queue" do
+        event_queue.push(event)
+        size_before = event_queue.size
+        poped_event = subject.check_new_event
+        size_after = event_queue.size
+        expect(poped_event).to eq event
+        expect(size_after).to eq (size_before - 1)
+      end
+    end
+  end
+
+  describe '#handle_new_event' do
+    it "calls #process_event if the event exists" do
+      event_queue.push(event)
+      expect(subject).to receive(:process_event).with(event).exactly(1).times
+      subject.handle_new_event
+    end
+
+    it "does not call #process_event when there is no event when run in non block mode" do
+      expect(event_queue.size).to be 0
+      expect(subject).not_to receive(:process_event)
+      subject.handle_new_event(true)
+    end
+  end
+
+  describe "#worker_loop" do
+    before do
+      allow(subject).to receive(:handle_new_event).and_return(nil)
+    end
+    it "terminates when no longer able to get new event" do
+      expect(event_queue.size).to be 0
+      expect(subject).to receive(:handle_new_event).exactly(1).times
+      subject.worker_loop
     end
   end
 
   describe "#run and #stop" do
     it "create the worker thread, than stop" do
-      expect(subject.instance_variable_get(:@thr)).to be nil
+      expect(subject.instance_variable_get(:@worker_thr)).to be nil
       subject.run
-      expect(subject.instance_variable_get(:@thr)).to be_a Thread
+      expect(subject.instance_variable_get(:@worker_thr)).to be_a Thread
       subject.stop
-      expect(subject.instance_variable_get(:@thr)).to be nil
-    end
-  end
-
-  describe "#create_selector" do
-    it "create a NIO::Selector object" do
-      subject.create_selector
-      expect(subject.instance_variable_get(:@selector)).to be_a NIO::Selector
+      expect(subject.instance_variable_get(:@worker_thr)).to be nil
     end
   end
 end
