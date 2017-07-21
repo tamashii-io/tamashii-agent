@@ -50,8 +50,6 @@ module Tamashii
 
       include AASM
 
-      TIMEOUT = 3
-
       aasm do
         state :init, initial: true
         state :connecting
@@ -281,7 +279,7 @@ module Tamashii
             # Request sent, do nothing
             logger.debug "Request sent for id = #{id}"
           else
-            if Time.now - start_time < TIMEOUT
+            if Time.now - start_time < Config.connection_timeout
               # Re-schedule self
               logger.warn "Reschedule #{id} after 1 sec"
               Concurrent::ScheduledTask.execute(1, args: [id, times + 1], &schedule_runner)
@@ -302,7 +300,7 @@ module Tamashii
           # Schedule to get the result
           create_request_scheduler_task(id, ev_type, ev_body)
           # Wait for result
-          if result = ivar.value(TIMEOUT)
+          if result = ivar.value(Config.connection_timeout)
             # IVar is already removed from pool
             result
           else

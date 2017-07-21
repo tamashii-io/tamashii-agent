@@ -10,6 +10,7 @@ module Tamashii
       register :entry_point, "/tamashii"
       register :manager_host, "localhost"
       register :manager_port, 3000
+      register :connection_timeout, 3
 
       def auth_type(type = nil)
         return @auth_type ||= :none if type.nil?
