@@ -18,14 +18,6 @@ RSpec.describe Tamashii::Agent::CardReader do
       subject
     end
   end
-  
-  describe "#handle_io" do
-    it "calls the select of ivar_selector" do
-      subject.create_selector
-      expect(ivar_selector).to receive(:select)
-      subject.handle_io
-    end
-  end
 
   describe "#handle_card" do
     context "when Reader#picc_request return false" do
@@ -56,7 +48,7 @@ RSpec.describe Tamashii::Agent::CardReader do
   describe "#process_uid" do
     let(:uid) { Array.new(4){rand(256)}.join("-") }
     it "sends the uid as card event to master" do
-      expect(master).to receive(:send_event).with(Tamashii::Agent::EVENT_CARD_DATA, uid)
+      expect(master).to receive(:send_event).with(Tamashii::Agent::Event.new(Tamashii::Agent::Event::CARD_DATA, uid))
       subject.process_uid(uid)
     end
   end

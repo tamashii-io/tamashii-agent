@@ -16,32 +16,33 @@ RSpec.describe Tamashii::Agent::Buzzer do
       expect(ivar_buzzer).not_to receive(:play_ok)
       expect(ivar_buzzer).not_to receive(:play_no)
       expect(ivar_buzzer).not_to receive(:play_error)
-      subject.process_event(ev_type, ev_body)
+      subject.process_event(Tamashii::Agent::Event.new(ev_type, ev_body))
     end
   end
 
   describe "#process_event" do
     context "when ev_type is not EVENT_BEEP" do
-      let(:ev_type){ Tamashii::Agent::EVENT_CARD_DATA }
+      let(:ev_type){ Tamashii::Agent::Event::CARD_DATA }
       let(:ev_body) { "other" }
+      let(:event) { Tamashii::Agent::Event.new(ev_type, ev_body) }
       it_behaves_like "buzzer will not react"
     end
 
     context "when ev_type is EVENT_BEEP" do
-      let(:ev_type){ Tamashii::Agent::EVENT_BEEP }
+      let(:ev_type){ Tamashii::Agent::Event::BEEP }
       it "calls Buzzer#play_ok when ev_body is ok" do
         expect(ivar_buzzer).to receive(:play_ok)
-        subject.process_event(ev_type, "ok")
+        subject.process_event(Tamashii::Agent::Event.new(ev_type, "ok"))
       end
 
       it "calls Buzzer#play_no when ev_body is no" do
         expect(ivar_buzzer).to receive(:play_no)
-        subject.process_event(ev_type, "no")
+        subject.process_event(Tamashii::Agent::Event.new(ev_type, "no"))
       end
       
       it "calls Buzzer#play_error when ev_body is error" do
         expect(ivar_buzzer).to receive(:play_error)
-        subject.process_event(ev_type, "error")
+        subject.process_event(Tamashii::Agent::Event.new(ev_type, "error"))
       end
 
       context "when the ev_body is not corrent" do
