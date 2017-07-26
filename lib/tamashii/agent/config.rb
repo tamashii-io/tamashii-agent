@@ -12,6 +12,9 @@ module Tamashii
       register :manager_port, 3000
       register :connection_timeout, 3
 
+      register :lcd_path, '/dev/i2c-1'
+      register :lcd_address, 0x27
+
       def auth_type(type = nil)
         return @auth_type ||= :none if type.nil?
         return unless AUTH_TYPES.include?(type)
