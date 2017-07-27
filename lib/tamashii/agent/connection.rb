@@ -89,6 +89,7 @@ module Tamashii
         @future_ivar_pool = Concurrent::Map.new
         @driver_lock = Mutex.new
 
+        @last_error_report_time = Time.now
         setup_resolver
       end
 
@@ -218,6 +219,10 @@ module Tamashii
 
       def try_create_socket
         logger.info "try to open socket..."
+        if Time.now - @last_error_report_time > 5.0
+          @master.send_event(Event.new(Event::LCD_MESSAGE, "Initializing\nConnection..."))
+          @last_error_report_time = Time.now
+        end
         if Config.use_ssl
           OpenSSL::SSL::SSLSocket.new(TCPSocket.new(@host, @port)).connect
         else
@@ -250,6 +255,7 @@ module Tamashii
               self.auth_success
             else
               logger.error "Authentication failed. Delay for 3 seconds"
+              @master.send_event(Event.new(Event::LCD_MESSAGE, "Fatal Error\nAuth Failed"))
               sleep 3
             end
           else

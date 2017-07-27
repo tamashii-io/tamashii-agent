@@ -74,6 +74,7 @@ module Tamashii
           end
         when Event::CONNECTION_NOT_READY
           broadcast_event(Event.new(Event::BEEP, "error"))
+          broadcast_event(Event.new(Event::LCD_MESSAGE, "Fatal Error\nConnection Error"))
         else
           broadcast_event(event)
         end
