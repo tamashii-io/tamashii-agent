@@ -79,23 +79,28 @@ module Tamashii
         end
       end
 
+      def show_message(message)
+        logger.info message
+        broadcast_event(Event.new(Event::LCD_MESSAGE, message))
+      end
+
       def system_reboot
-        logger.info "Rebooting..."
+        show_message "Rebooting"
         system("reboot &")
       end
 
       def system_poweroff
-        logger.info "Powering Off..."
+        show_message "Powering  Off"
         system("poweroff &")
       end
 
       def system_restart
-        logger.info "Restarting..."
+        show_message "Restarting"
         system("systemctl restart tamashii-agent.service &")
       end
 
       def system_update
-        logger.info "Updating..."
+        show_message("Updating")
         system("gem update tamashii-agent")
         system_restart
       end

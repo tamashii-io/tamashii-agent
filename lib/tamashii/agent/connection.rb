@@ -102,6 +102,9 @@ module Tamashii
           [Type::REBOOT, Type::POWEROFF, Type::RESTART, Type::UPDATE].each do |type|
             handle type,  Handler::System, env_data
           end
+          [Type::LCD_MESSAGE, Type::LCD_SET_IDLE_TEXT].each do |type|
+            handle type,  Handler::LCD, env_data
+          end
           handle Type::BUZZER_SOUND,  Handler::Buzzer, env_data
           handle Type::RFID_RESPONSE_JSON,  Handler::RemoteResponse, env_data
         end
@@ -116,6 +119,9 @@ module Tamashii
           @master.send_event(Event.new(Event::BEEP, "ok"))
         else
           @master.send_event(Event.new(Event::BEEP, "no"))
+        end
+        if result["message"]
+          @master.send_event(Event.new(Event::LCD_MESSAGE, result["message"]))
         end
       end
 
