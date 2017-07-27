@@ -1,4 +1,3 @@
-require "tamashii/common"
 require "tamashii/agent/version"
 require "tamashii/agent/master"
 require "tamashii/agent/config"

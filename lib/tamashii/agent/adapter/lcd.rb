@@ -9,11 +9,11 @@ module Tamashii
       class LCD < Base
         class << self
           def real_class
-            LCD
+            Device::LCD
           end
 
           def fake_class
-            FakeLCD
+            Device::FakeLCD
           end
         end
       end

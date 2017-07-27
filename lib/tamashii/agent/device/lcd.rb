@@ -39,8 +39,8 @@ module Tamashii
           sleep(DELAY)
         end
 
-        def print(message)
-          lines = message.lines
+        def print_message(message)
+          lines = message.lines.map{|l| l.delete("\n")}
           2.times.each { |line| print_line(lines[line], LINES[line]) }
         end
 
@@ -52,6 +52,7 @@ module Tamashii
         end
 
         def print_line(message, line)
+          message = '' unless message
           message = message.ljust(WIDTH, ' ')
           byte(line, OP_CMD)
           WIDTH.times.each { |pos| byte(message[pos].ord, OP_CHR) }

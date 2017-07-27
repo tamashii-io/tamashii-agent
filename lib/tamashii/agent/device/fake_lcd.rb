@@ -1,5 +1,3 @@
-require 'i2c'
-
 module Tamashii
   module Agent
     module Device
@@ -13,8 +11,8 @@ module Tamashii
           @backlight = true
         end
 
-        def print(message)
-          lines = message.lines
+        def print_message(message)
+          lines = message.lines.map{|l| l.delete("\n")}
           puts "LCD Display(BACKLIGHT: #{@backlight}):"
           puts lines.take(2).map { |line| print_line(line) }.join("\n")
         end
@@ -22,6 +20,7 @@ module Tamashii
         private
 
         def print_line(message)
+          message = '' unless message
           message = message.ljust(WIDTH, ' ')
           message.split('').take(WIDTH).join('')
         end

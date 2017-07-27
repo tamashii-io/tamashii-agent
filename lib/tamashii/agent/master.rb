@@ -1,4 +1,6 @@
+require 'tamashii/agent/common'
 require 'tamashii/agent/connection'
+require 'tamashii/agent/lcd'
 require 'tamashii/agent/buzzer'
 require 'tamashii/agent/card_reader'
 require 'tamashii/agent/event'
@@ -42,6 +44,7 @@ module Tamashii
         @components = {}
         @components[:connection] = create_component(Connection, self, @host, @port)
         @components[:buzzer] = create_component(Buzzer)
+        @components[:lcd] = create_component(LCD)
         @components[:card_reader] = create_component(CardReader, self)
       end
 
