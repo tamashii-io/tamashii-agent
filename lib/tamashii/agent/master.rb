@@ -99,6 +99,7 @@ module Tamashii
       def show_message(message)
         logger.info message
         broadcast_event(Event.new(Event::LCD_MESSAGE, message))
+        sleep 1
       end
 
       def system_reboot
