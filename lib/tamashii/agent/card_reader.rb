@@ -9,8 +9,7 @@ module Tamashii
   module Agent
     class CardReader < Component
       def initialize(master)
-        super()
-        @master = master
+        super
         @reader = Adapter::CardReader.object
         logger.debug "Using card_reader instance: #{@reader.class}"
       end

@@ -12,9 +12,10 @@ module Tamashii
     class Master < Component
 
       attr_reader :serial_number
+      attr_reader :host, :port
 
       def initialize(host, port)
-        super()
+        super(self)
         logger.info "Starting Tamashii::Agent #{Tamashii::Agent::VERSION} in #{Config.env} mode"
         @host = host
         @port = port
@@ -42,9 +43,9 @@ module Tamashii
 
       def create_components
         @components = {}
-        @components[:connection] = create_component(Connection, self, @host, @port)
-        @components[:buzzer] = create_component(Buzzer)
-        @components[:lcd] = create_component(LCD)
+        @components[:connection] = create_component(Connection, self)
+        @components[:buzzer] = create_component(Buzzer, self)
+        @components[:lcd] = create_component(LCD, self)
         @components[:card_reader] = create_component(CardReader, self)
       end
 

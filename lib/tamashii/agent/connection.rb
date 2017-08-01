@@ -76,14 +76,13 @@ module Tamashii
       attr_reader :url
       attr_reader :master
 
-      def initialize(master, host, port)
-        super()
-        @master = master
-        @url = "#{Config.use_ssl ? "wss" : "ws"}://#{host}:#{port}/#{Config.entry_point}"
+      def initialize(master)
+        super
+        @host = @master.host
+        @port = @master.port
+        @url = "#{Config.use_ssl ? "wss" : "ws"}://#{@host}:#{@port}/#{Config.entry_point}"
         self.reset
 
-        @host = host
-        @port = port
         @tag = 0
 
         @future_ivar_pool = Concurrent::Map.new

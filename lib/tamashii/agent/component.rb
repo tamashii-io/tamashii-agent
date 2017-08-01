@@ -7,7 +7,8 @@ module Tamashii
     class Component
       include Common::Loggable
 
-      def initialize
+      def initialize(master)
+        @master = master
         @event_queue = Queue.new
       end
 

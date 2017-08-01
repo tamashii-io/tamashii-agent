@@ -9,7 +9,7 @@ require 'tamashii/agent/adapter/lcd'
 module Tamashii
   module Agent
     class LCD < Component
-      def initialize
+      def initialize(master)
         super
         load_lcd_device
         @device_lock = Mutex.new

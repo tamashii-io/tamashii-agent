@@ -9,7 +9,10 @@ module Tamashii
       LCD_MESSAGE = 5
       LCD_SET_IDLE_TEXT = 6
 
+      RESTART_COMPONENT = 254
       CONNECTION_NOT_READY = 255
+
+      
       
       attr_reader :type, :body
 
