@@ -1,4 +1,5 @@
 require 'mfrc522'
+require 'concurrent'
 
 require 'tamashii/agent/component'
 require 'tamashii/agent/event'
@@ -8,10 +9,26 @@ require 'tamashii/agent/adapter/card_reader'
 module Tamashii
   module Agent
     class CardReader < Component
+
+      ERROR_RESET_TIMER = 5
+
       def initialize(master)
         super
         @reader = Adapter::CardReader.object
         logger.debug "Using card_reader instance: #{@reader.class}"
+      end
+
+      def reset_error_timer
+        return unless @error_timer_task
+        @error_timer_task.cancel
+        @error_timer_task = nil
+        logger.info "Error timer is reset"
+      end
+
+      def set_error_timer
+        return if @error_timer_task && !@error_timer_task.unscheduled?
+        logger.info "Error timer is set"
+        @error_timer_task = Concurrent::ScheduledTask.execute(ERROR_RESET_TIMER) { restart_current_component_async }
       end
 
       # override
@@ -38,10 +55,13 @@ module Tamashii
         begin
           uid, sak = @reader.picc_select
           process_uid(uid.join("-"))
+          reset_error_timer
         rescue CommunicationError, UnexpectedDataError => e
           logger.error "Error when selecting card: #{e.message}"
+          set_error_timer
         rescue => e
           logger.error "GemError when selecting card: #{e.message}"
+          set_error_timer
         end
         @reader.picc_halt
         true
@@ -55,6 +75,11 @@ module Tamashii
       # override
       def process_event(event)
         # silent is gold
+      end
+
+      def clean_up
+        super
+        @reader.shutdown
       end
     end
   end

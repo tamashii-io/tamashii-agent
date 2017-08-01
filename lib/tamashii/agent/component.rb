@@ -29,6 +29,10 @@ module Tamashii
         ev
       end
 
+      def restart_current_component_async
+        @master.send_event(Event.new(Event::RESTART_COMPONENT, self.class))
+      end
+
       def process_event(event)
         logger.debug "Got event: #{event.type}, #{event.body}"
       end

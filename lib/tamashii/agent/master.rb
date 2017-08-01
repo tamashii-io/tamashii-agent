@@ -43,10 +43,10 @@ module Tamashii
 
       def create_components
         @components = {}
-        @components[:connection] = create_component(Connection, self)
-        @components[:buzzer] = create_component(Buzzer, self)
-        @components[:lcd] = create_component(LCD, self)
-        @components[:card_reader] = create_component(CardReader, self)
+        create_component(Connection, self)
+        create_component(Buzzer, self)
+        create_component(LCD, self)
+        create_component(CardReader, self)
       end
 
       def create_component(class_name, *args)
@@ -54,7 +54,20 @@ module Tamashii
         logger.info "Starting component: #{class_name}"
         yield c if block_given?
         c.run
+        @components[class_name] = c
+        
         c
+      end
+
+      def restart_component(class_name)
+        if old_component = @components[class_name]
+          logger.info "Stopping component: #{class_name}"
+          old_component.stop # TODO: set timeout for stopping?
+          logger.info "Restarting component: #{class_name}"
+          create_component(class_name, self)
+        else
+          logger.error "Rstart component failed: unknown component #{name}"
+        end
       end
 
       # override
@@ -76,6 +89,8 @@ module Tamashii
         when Event::CONNECTION_NOT_READY
           broadcast_event(Event.new(Event::BEEP, "error"))
           broadcast_event(Event.new(Event::LCD_MESSAGE, "Fatal Error\nConnection Error"))
+        when Event::RESTART_COMPONENT
+          restart_component(event.body)
         else
           broadcast_event(event)
         end

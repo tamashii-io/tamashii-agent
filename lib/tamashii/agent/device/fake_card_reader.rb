@@ -30,6 +30,9 @@ module Tamashii
 
         def picc_halt(*args)
         end
+
+        def shutdown(*args)
+        end
       end
     end
   end

@@ -273,12 +273,16 @@ module Tamashii
       def process_event(event)
         case event.type
         when Event::CARD_DATA
-          id = event.body
-          wrapped_body = {
-            id: id,
-            ev_body: event.body
-          }.to_json
-          new_remote_request(id, Type::RFID_NUMBER, wrapped_body)
+          if self.ready?
+            id = event.body
+            wrapped_body = {
+              id: id,
+              ev_body: event.body
+            }.to_json
+            new_remote_request(id, Type::RFID_NUMBER, wrapped_body)
+          else
+            @master.send_event(Event.new(Event::CONNECTION_NOT_READY, "Connection not ready for #{event.type}:#{event.body}"))
+          end
         end
       end
 
