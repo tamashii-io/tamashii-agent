@@ -6,6 +6,13 @@ RSpec.describe Tamashii::Agent::Component do
   let(:ev_body) { "test body" }
   let(:event) { Tamashii::Agent::Event.new(ev_type, ev_body) }
   let(:event_queue) { subject.instance_variable_get(:@event_queue) }
+  let(:master) {
+    obj = double()
+    allow(obj).to receive(:send_event)
+    obj
+  }
+
+  subject { described_class.new(master) }
 
   describe '#send_event' do
     it "can be called with a event, which can be checked right after" do
@@ -66,6 +73,13 @@ RSpec.describe Tamashii::Agent::Component do
       expect(subject.instance_variable_get(:@worker_thr)).to be_a Thread
       subject.stop
       expect(subject.instance_variable_get(:@worker_thr)).to be nil
+    end
+  end
+
+  describe "#restart_current_component_async" do
+    it "createa restart event to master using its class name as param" do
+      expect(master).to receive(:send_event).with(Tamashii::Agent::Event.new(Tamashii::Agent::Event::RESTART_COMPONENT, described_class))
+      subject.restart_current_component_async
     end
   end
 end

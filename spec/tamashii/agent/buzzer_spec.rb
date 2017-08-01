@@ -4,6 +4,14 @@ RSpec.describe Tamashii::Agent::Buzzer do
   
   let(:ivar_buzzer) { subject.instance_variable_get(:@buzzer) }
 
+  let(:master) {
+    obj = double()
+    allow(obj).to receive(:send_event)
+    obj
+  }
+
+  subject { described_class.new(master) }
+
   describe "#initialize" do
     it "creates a buzzer by calling Adapter::Buzzer.object" do
       expect(Tamashii::Agent::Adapter::Buzzer).to receive(:object)

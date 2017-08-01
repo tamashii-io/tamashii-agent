@@ -2,11 +2,12 @@ require 'spec_helper'
 
 RSpec.describe Tamashii::Agent::Connection do
 
-  let(:host) { "manager.dev" }
-  let(:port) { 3000 }
+
   let(:master) {
     obj = double()
     allow(obj).to receive(:send_event)
+    allow(obj).to receive(:host).and_return("manager.dev")
+    allow(obj).to receive(:port).and_return(3000)
     obj
   }
 
@@ -34,7 +35,7 @@ RSpec.describe Tamashii::Agent::Connection do
     r
   }
 
-  subject { described_class.new(master, host, port) }
+  subject { described_class.new(master) }
 
   context "when auth and connection is established" do
     let!(:ws_instance) do

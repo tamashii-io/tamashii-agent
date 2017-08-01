@@ -60,9 +60,9 @@ RSpec.describe Tamashii::Agent::Master do
   describe "#process event" do
     let(:master_only_events) { [Tamashii::Agent::Event::SYSTEM_COMMAND] }
     context "when the message should handle by master" do
-      it "does not pass the event to any compoments" do
+      it "does not pass this event to any compoments" do
         expect(component_instance).not_to receive(:send_event)
-        expect(subject).not_to receive(:broadcast_event)
+        expect(subject).not_to receive(:broadcast_event).with(Tamashii::Agent::Event.new(ev_type, ev_body))
         master_only_events.each do |ev_type|
           subject.process_event(Tamashii::Agent::Event.new(ev_type, ev_body))
         end

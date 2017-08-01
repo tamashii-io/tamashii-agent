@@ -28,10 +28,12 @@ module Tamashii
       end
 
       def schedule_to_print_idle(delay = 5)
-        @back_to_idle_task = Concurrent::ScheduledTask.execute(delay) do
-          @device_lock.synchronize do
-            @lcd.print_message(@idle_message)
-          end
+        @back_to_idle_task = Concurrent::ScheduledTask.execute(delay, &method(:print_idle))
+      end
+
+      def print_idle
+        @device_lock.synchronize do
+          @lcd.print_message(@idle_message)
         end
       end
 
