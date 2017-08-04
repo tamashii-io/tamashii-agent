@@ -12,6 +12,8 @@ module Tamashii
       register :manager_port, 3000
       register :connection_timeout, 3
 
+      register :localtime, "+08:00"
+
       register :lcd_path, '/dev/i2c-1'
       register :lcd_address, 0x27
 
