@@ -59,14 +59,14 @@ module Tamashii
             sleep Config.lcd_animation_delay
             animation_show_text
             break if @stop_animation
-            sleep 1 if @pos == 0 || @pos == @max_pos
+            sleep Config.lcd_animation_delay if @pos == 0 || @pos == @max_pos
           end
         end
 
         def stop_animation
           @stop_animation = true
           if @animation_thread
-            @animation_thread.join(1)
+            @animation_thread.join(Config.lcd_animation_delay * 3)
             @animation_thread.exit 
             @animation_thread = nil
           end
