@@ -5,18 +5,88 @@ require 'tamashii/agent/event'
 require 'tamashii/agent/adapter/lcd'
 
 
-Thread.abort_on_exception = true
 module Tamashii
   module Agent
     class LCD < Component
+
+      class LineAnimator
+        include Common::Loggable
+        attr_reader :text
+
+        def self.line_width=(value)
+          @@line_width = value
+        end
+
+        def self.handler_print_line=(value)
+          @@handler_print_line = value
+        end
+
+        def initialize(line)
+          @line = line
+          @text = ""
+          @pos = -1
+        end
+
+        def set_text(text)
+          return if text == @text
+          stop_animation
+          @text = text || ""
+          if @text.size > @@line_width
+            start_animation
+          else
+            print_text(@text)
+          end
+        end
+
+        def animation_show_text
+          text = @text[@pos, @@line_width]
+          @pos += 1
+          @pos = 0 if @pos > @max_pos
+          print_text(text)
+        end
+
+        def start_animation
+          @pos = 0
+          @max_pos = @text.size - @@line_width
+          logger.debug "Start animation for line #{@line}: #{@text}"
+          @animation_thread = Thread.new { animation_loop }
+        end
+
+        def animation_loop
+          loop do
+            sleep Config.lcd_animation_delay
+            animation_show_text
+            sleep 1 if @pos == 0 || @pos == @max_pos
+          end
+        end
+
+        def stop_animation
+          @animation_thread.exit if @animation_thread
+          @animation_thread = nil
+        end
+
+        def print_text(text)
+          @@handler_print_line&.call(text, @line)
+        end
+      end
+
       def initialize(master)
         super
         load_lcd_device
+        @device_line_count = @lcd.class::LINE_COUNT
         @device_lock = Mutex.new
+        create_line_animators
         set_idle_text("[Tamashii]\nIdle...")
         logger.debug "Using LCD instance: #{@lcd.class}"
-        print_message_with_lock("Initializing\nPlease wait...")
+        print_message("Initializing\nPlease wait...")
         schedule_to_print_idle
+      end
+
+      def create_line_animators
+        LineAnimator.line_width = @lcd.class::WIDTH
+        LineAnimator.handler_print_line = method(:print_line)
+        @line_animators = [] 
+        @device_line_count.times {|i| @line_animators << LineAnimator.new(i)}
       end
 
       def load_lcd_device
@@ -27,9 +97,16 @@ module Tamashii
         @lcd = Adapter::LCD.fake_class.new
       end
 
-      def print_message_with_lock(*args)
+      def print_message(message)
+        lines = message.lines.map{|l| l.delete("\n")} 
+        @device_line_count.times do |line_count|
+          @line_animators[line_count].set_text(lines[line_count])
+        end
+      end
+
+      def print_line(*args)
         @device_lock.synchronize do
-          @lcd.print_message(*args)
+          @lcd.print_line(*args)
         end
       end
 
@@ -77,7 +154,7 @@ module Tamashii
       end
 
       def print_idle
-        print_message_with_lock(@idle_text)
+        print_message(@idle_text)
       end
 
       def process_event(event)
@@ -85,7 +162,7 @@ module Tamashii
         when Event::LCD_MESSAGE
           logger.debug "Show message: #{event.body}"
           @back_to_idle_task&.cancel
-          print_message_with_lock(event.body)
+          print_message(event.body)
           @device_lock.synchronize do
             schedule_to_print_idle
           end
@@ -97,7 +174,7 @@ module Tamashii
       end
 
       def clear_screen
-        print_message_with_lock("")
+        print_message("")
       end
 
       def clean_up
@@ -107,7 +184,4 @@ module Tamashii
     end
   end
 end
-
-
-
 

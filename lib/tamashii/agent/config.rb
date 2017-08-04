@@ -16,6 +16,7 @@ module Tamashii
 
       register :lcd_path, '/dev/i2c-1'
       register :lcd_address, 0x27
+      register :lcd_animation_delay, 1
 
       def auth_type(type = nil)
         return @auth_type ||= :none if type.nil?

@@ -6,6 +6,7 @@ module Tamashii
       # :nodoc:
       class LCD
         WIDTH = 16
+        LINE_COUNT = 2
 
         OP_CHR = 1
         OP_CMD = 0
@@ -41,7 +42,11 @@ module Tamashii
 
         def print_message(message)
           lines = message.lines.map{|l| l.delete("\n")}
-          2.times.each { |line| print_line(lines[line], LINES[line]) }
+          LINE_COUNT.times.each { |line| print_line(lines[line], line) }
+        end
+
+        def print_line(message, line)
+          write_line(message, LINES[line])
         end
 
         private
@@ -51,7 +56,7 @@ module Tamashii
           BACKLIGHT_OFF
         end
 
-        def print_line(message, line)
+        def write_line(message, line)
           message = '' unless message
           message = message.ljust(WIDTH, ' ')
           byte(line, OP_CMD)

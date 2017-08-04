@@ -34,14 +34,14 @@ RSpec.describe Tamashii::Agent::LCD do
 
   describe "#print_idle" do
     it "call print message with @idle_text" do
-      expect(ivar_lcd).to receive(:print_message).with(ivar_idle_text)
+      expect(subject).to receive(:print_message).with(ivar_idle_text)
       subject.print_idle
     end
   end
   
   describe "#clear_screen" do
     it "call print message with empty string" do
-      expect(ivar_lcd).to receive(:print_message).with("")
+      expect(subject).to receive(:print_message).with("")
       subject.clear_screen
     end
   end
@@ -50,17 +50,17 @@ RSpec.describe Tamashii::Agent::LCD do
 
   end
   
-  describe "#print_message_with_lock" do
+  describe "#print_line" do
     it "does not allow lcd to be called without using mutex" do
       expect(ivar_device_lock).to receive(:synchronize).and_return(nil)
-      expect(ivar_lcd).not_to receive(:print_message)
-      subject.print_message_with_lock(message)
+      expect(ivar_lcd).not_to receive(:print_line)
+      subject.print_line(message)
     end
 
     it "expect lcd.print_message to be called when lock is used" do
       expect(ivar_device_lock).to receive(:synchronize).and_yield
-      expect(ivar_lcd).to receive(:print_message)
-      subject.print_message_with_lock(message)
+      expect(ivar_lcd).to receive(:print_line).with(message, 0)
+      subject.print_line(message, 0)
     end
   end
 
