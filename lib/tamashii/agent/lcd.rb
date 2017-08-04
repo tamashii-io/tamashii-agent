@@ -25,6 +25,7 @@ module Tamashii
           @line = line
           @text = ""
           @pos = -1
+          @stop_animation = false
         end
 
         def set_text(text)
@@ -48,6 +49,7 @@ module Tamashii
         def start_animation
           @pos = 0
           @max_pos = @text.size - @@line_width
+          @stop_animation = false
           logger.debug "Start animation for line #{@line}: #{@text}"
           @animation_thread = Thread.new { animation_loop }
         end
@@ -56,13 +58,18 @@ module Tamashii
           loop do
             sleep Config.lcd_animation_delay
             animation_show_text
+            break if @stop_animation
             sleep 1 if @pos == 0 || @pos == @max_pos
           end
         end
 
         def stop_animation
-          @animation_thread.exit if @animation_thread
-          @animation_thread = nil
+          @stop_animation = true
+          if @animation_thread
+            @animation_thread.join(1)
+            @animation_thread.exit 
+            @animation_thread = nil
+          end
         end
 
         def print_text(text)
