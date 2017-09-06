@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe Tamashii::Agent::Config do
-
+  
   describe ".auth_type" do
     it "can be changed" do
       expect(subject.auth_type).to eq(:none)
@@ -29,6 +29,20 @@ RSpec.describe Tamashii::Agent::Config do
     it "default output to STDOUT" do
       expect(subject.log_file).to eq(STDOUT)
     end
+
+    context "setter will also changes the value in Tamashii::Client" do
+      before do
+        @old_client_log_file = Tamashii::Client::Config.log_file
+      end
+      after do
+        Tamashii::Client::Config.log_file = @old_client_log_file
+      end
+      it "has the same value as agent" do
+        path = SecureRandom.hex(16)
+        subject.log_file(path)
+        expect(Tamashii::Client::Config.log_file).to eq(path)
+      end
+    end
   end
 
   describe ".log_level" do
@@ -39,6 +53,20 @@ RSpec.describe Tamashii::Agent::Config do
     it "can be changed" do
       subject.log_level(Logger::INFO)
       expect(subject.log_level).to eq(Logger::INFO)
+    end
+
+
+    context "setter will also changes the value in Tamashii::Client" do
+      before do
+        @old_client_log_level = Tamashii::Client::Config.log_level
+      end
+      after do
+        Tamashii::Client::Config.log_level = @old_client_log_level
+      end
+      it "setter will also change the value in Tamashii::Client" do
+        subject.log_level(Logger::INFO)
+        expect(Tamashii::Client::Config.log_level).to eq(Logger::INFO)
+      end
     end
   end
 
@@ -63,6 +91,16 @@ RSpec.describe Tamashii::Agent::Config do
 
     it "can compare by symbol" do
       expect(subject.env).to eq(:development)
+    end
+  end
+
+  forward_methods = [:use_ssl, :host, :port, :entry_point]
+  describe "forwarded methods: #{forward_methods.join(', ')}" do
+    forward_methods.each do |method_name|
+      it "forward the client-specific method #{method_name} calls to Tamashii::Client" do
+        expect(Tamashii::Client::Config).to receive(method_name)
+        subject.send(method_name)
+      end
     end
   end
 
