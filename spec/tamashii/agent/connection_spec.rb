@@ -30,35 +30,26 @@ RSpec.describe Tamashii::Agent::Connection do
 
   let(:future_ivar_pool) { subject.instance_variable_get(:@future_ivar_pool) }
 
-  let(:fake_io) {
-    r, w = IO.pipe
-    r
-  }
+  let!(:client_instance) do
+    client = double("ws client")
+    allow(client).to receive(:on)
+    allow(client).to receive(:close)
+    allow(client).to receive(:transmit)
+    client
+  end
 
-  subject { described_class.new(master) }
+  subject do 
+    # mock ws client
+    allow(Tamashii::Client::Base).to receive(:new).and_return(client_instance)
+    described_class.new(master)
+  end
 
-  context "when auth and connection is established" do
-    let!(:ws_instance) do
-      driver = double('ws driver')
-      allow(driver).to receive(:on)
-      allow(driver).to receive(:start)
-      allow(driver).to receive(:parse)
-      allow(driver).to receive(:binary)
-      driver
-    end
-    before do 
-
+  context "when connection is established and auth is ready" do
+    before(:each) do 
       allow(subject).to receive(:ready?).and_return(true)
       allow(subject).to receive(:auth_pending?).and_return(false)
-      allow(subject).to receive(:connecting?).and_return(false)
-      # mock ws driver
-      allow(WebSocket::Driver).to receive(:client).and_return(ws_instance)
 
-      subject.instance_variable_set(:@io, fake_io)
-      subject.create_selector
-      subject.start_web_driver
       subject.instance_variable_set(:@tag , auth_tag)
-
     end
 
     shared_examples "process packet and resolve that packet" do
@@ -98,8 +89,8 @@ RSpec.describe Tamashii::Agent::Connection do
       end
     end
 
-    it "can send the request to ws driver" do
-      expect(ws_instance).to receive((:binary))
+    it "sends the dumped packet data to ws client" do
+      expect(client_instance).to receive(:transmit).with(Tamashii::Packet.new(ev_type, auth_tag, wrapped_ev_body).dump)
       subject.try_send_request(ev_type, wrapped_ev_body)
     end
 
@@ -239,6 +230,7 @@ RSpec.describe Tamashii::Agent::Connection do
 
   shared_examples "it will not start data process" do
     it "will not send the packet request" do
+      expect(client_instance).not_to receive(:transmit)
       expect(subject.try_send_request(ev_type, wrapped_ev_body)).to be false
     end
   end
@@ -247,7 +239,6 @@ RSpec.describe Tamashii::Agent::Connection do
     before do 
       allow(subject).to receive(:ready?).and_return(false)
       allow(subject).to receive(:auth_pending?).and_return(true)
-      allow(subject).to receive(:connecting?).and_return(false)
     end
 
     it_behaves_like "it will not start data process"
@@ -277,7 +268,6 @@ RSpec.describe Tamashii::Agent::Connection do
     before do 
       allow(subject).to receive(:ready?).and_return(false)
       allow(subject).to receive(:auth_pending?).and_return(false)
-      allow(subject).to receive(:connecting?).and_return(true)
     end
     it_behaves_like "it will not start data process"
   end

@@ -3,7 +3,10 @@ require 'tempfile'
 require 'simplecov'
 require 'timecop'
 
-SimpleCov.start
+SimpleCov.start do
+  add_filter '/spec/'
+  add_filter '/vendor'
+end
 
 require "tamashii/agent"
 
