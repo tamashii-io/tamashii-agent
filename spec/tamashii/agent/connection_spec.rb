@@ -1,16 +1,6 @@
 require 'spec_helper'
 
 RSpec.describe Tamashii::Agent::Connection do
-
-
-  let(:master) {
-    obj = double()
-    allow(obj).to receive(:send_event)
-    allow(obj).to receive(:host).and_return("manager.dev")
-    allow(obj).to receive(:port).and_return(3000)
-    obj
-  }
-
   let!(:id) { rand(256) }
   let!(:ev_type) { rand(256) }
   let!(:req_ev_type) { ev_type }
@@ -30,18 +20,21 @@ RSpec.describe Tamashii::Agent::Connection do
 
   let(:future_ivar_pool) { subject.instance_variable_get(:@future_ivar_pool) }
 
-  let!(:client_instance) do
-    client = double("ws client")
-    allow(client).to receive(:on)
-    allow(client).to receive(:close)
-    allow(client).to receive(:transmit)
-    client
-  end
+  let(:master) { instance_double(Tamashii::Agent::Master) }
+  let(:client_instance) { instance_double(Tamashii::Client::Base) }
 
   subject do 
     # mock ws client
     allow(Tamashii::Client::Base).to receive(:new).and_return(client_instance)
     described_class.new(master)
+  end
+
+  before do
+    allow(client_instance).to receive(:on)
+    allow(client_instance).to receive(:transmit)
+    allow(client_instance).to receive(:close)
+
+    allow(master).to receive(:send_event)
   end
 
   context "when connection is established and auth is ready" do
