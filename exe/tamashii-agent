@@ -22,12 +22,14 @@ OptionParser.new do |opts|
     File.open(SYSTEM_CONFIG_FILENAME, "w") do |f|
       f.write <<-EOS
 Tamashii::Agent::config do
-  manager_host "localhost"
-  manager_port 3000
+  use_ssl false
+  host "localhost"
+  port 3000
+  entry_point "/tamashii"
   log_file "/var/log/tamashii-agent.log"
-  log_level "info"
+  log_level :INFO
   auth_type :token
-  token "abc123"
+  token "SECRET_TOKEN"
 end
       EOS
     end
