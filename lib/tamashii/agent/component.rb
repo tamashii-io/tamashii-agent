@@ -7,7 +7,8 @@ module Tamashii
     class Component
       include Common::Loggable
 
-      def initialize(master)
+      def initialize(name, master, options = {})
+        @name = name
         @master = master
         @event_queue = Queue.new
       end
@@ -30,7 +31,7 @@ module Tamashii
       end
 
       def restart_current_component_async
-        @master.send_event(Event.new(Event::RESTART_COMPONENT, self.class))
+        @master.send_event(Event.new(Event::RESTART_COMPONENT, @name))
       end
 
       def process_event(event)

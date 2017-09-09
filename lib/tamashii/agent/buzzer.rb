@@ -5,7 +5,7 @@ require 'tamashii/agent/adapter/buzzer'
 module Tamashii
   module Agent
     class Buzzer < Component
-      def initialize(master)
+      def initialize(name, master, options = {})
         super
         @buzzer = Adapter::Buzzer.object
         logger.debug "Using buzzer instance: #{@buzzer.class}"

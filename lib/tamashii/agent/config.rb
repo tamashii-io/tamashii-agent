@@ -5,6 +5,7 @@ module Tamashii
     class Config < Tamashii::Config
       AUTH_TYPES = [:none, :token]
 
+      register :default_components, {networking: {class_name: :Networking, options: {}}}
       register :connection_timeout, 3
 
       register :localtime, "+08:00"
@@ -36,6 +37,18 @@ module Tamashii
         define_method(method_name) do |*args|
           Tamashii::Client.config.send(method_name, *args)
         end
+      end
+
+      def add_component(name, class_name, options = {},  &block)
+        self.components[name] = {class_name: class_name, options: options, block: block}  
+      end
+
+      def remove_component(name)
+        self.components.delete(name)
+      end
+
+      def components
+        @components ||= self.default_components.clone
       end
     end
   end

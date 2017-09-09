@@ -12,7 +12,7 @@ module Tamashii
 
       ERROR_RESET_TIMER = 5
 
-      def initialize(master)
+      def initialize(name, master, options = {})
         super
         @reader = Adapter::CardReader.object
         logger.debug "Using card_reader instance: #{@reader.class}"

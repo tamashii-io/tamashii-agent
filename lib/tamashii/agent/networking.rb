@@ -14,9 +14,9 @@ require 'tamashii/client'
 
 module Tamashii
   module Agent
-    class Connection < Component
+    class Networking < Component
 
-      autoload :RequestObserver, 'tamashii/agent/connection/request_observer'
+      autoload :RequestObserver, 'tamashii/agent/networking/request_observer'
 
       class RequestTimeoutError < RuntimeError; end
 
@@ -43,7 +43,7 @@ module Tamashii
       attr_reader :url
       attr_reader :master
 
-      def initialize(master)
+      def initialize(name, master, options = {})
         super
 
         self.reset
@@ -59,7 +59,7 @@ module Tamashii
       end
 
       def setup_resolver
-        env_data = {connection: self}
+        env_data = {networking: self, master: @master}
         Resolver.config do
           [Type::REBOOT, Type::POWEROFF, Type::RESTART, Type::UPDATE].each do |type|
             handle type,  Handler::System, env_data
@@ -100,7 +100,6 @@ module Tamashii
         super
         @client.close
       end
-
 
       def send_auth_request
         # TODO: other types of auth

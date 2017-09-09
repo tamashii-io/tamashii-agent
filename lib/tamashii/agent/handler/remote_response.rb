@@ -5,7 +5,7 @@ module Tamashii
     module Handler
       class RemoteResponse < Base
         def resolve(data)
-          @connection.handle_remote_response(self.type, data)
+          @networking.handle_remote_response(self.type, data)
         end
       end
     end

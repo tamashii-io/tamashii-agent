@@ -6,8 +6,8 @@ module Tamashii
       class Base < Tamashii::Handler
         def initialize(*args, &block)
           super(*args, &block)
-          @connection = self.env[:connection]
-          @master = @connection.master
+          @networking = self.env[:networking]
+          @master = self.env[:master]
         end
       end
     end

@@ -2,12 +2,12 @@ require 'tamashii/common'
 
 module Tamashii
   module Agent
-    class Connection
+    class Networking
       class RequestObserver
 
         include Common::Loggable
-        def initialize(connection, id, ev_type, ev_body, future)
-          @connection = connection
+        def initialize(networking, id, ev_type, ev_body, future)
+          @networking = networking
           @id = id
           @ev_type = ev_type
           @ev_body = ev_body
@@ -21,13 +21,13 @@ module Tamashii
             case res_ev_type
             when Type::RFID_RESPONSE_JSON
               logger.debug "Handled: #{res_ev_type}: #{res_ev_body}"
-              @connection.handle_card_result(JSON.parse(res_ev_body))
+              @networking.handle_card_result(JSON.parse(res_ev_body))
             else
               logger.warn "Unhandled packet result: #{res_ev_type}: #{res_ev_body}"
             end
           else
             logger.error "#{@id} Failed with #{reason}"
-            @connection.on_request_timeout(@ev_type, @ev_body)
+            @networking.on_request_timeout(@ev_type, @ev_body)
           end
         end
       end

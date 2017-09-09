@@ -77,7 +77,7 @@ module Tamashii
         end
       end
 
-      def initialize(master)
+      def initialize(name, master, options = {})
         super
         load_lcd_device
         @device_line_count = @lcd.class::LINE_COUNT

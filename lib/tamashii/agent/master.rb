@@ -1,5 +1,5 @@
 require 'tamashii/agent/common'
-require 'tamashii/agent/connection'
+require 'tamashii/agent/networking'
 require 'tamashii/agent/lcd'
 require 'tamashii/agent/buzzer'
 require 'tamashii/agent/card_reader'
@@ -12,13 +12,10 @@ module Tamashii
     class Master < Component
 
       attr_reader :serial_number
-      attr_reader :host, :port
 
-      def initialize(host, port)
-        super(self)
+      def initialize
+        super(:master, self)
         logger.info "Starting Tamashii::Agent #{Tamashii::Agent::VERSION} in #{Config.env} mode"
-        @host = host
-        @port = port
         @serial_number = get_serial_number
         logger.info "Serial number: #{@serial_number}"
         create_components
@@ -43,30 +40,34 @@ module Tamashii
 
       def create_components
         @components = {}
-        create_component(Connection, self)
-        create_component(Buzzer, self)
-        create_component(LCD, self)
-        create_component(CardReader, self)
+        Config.components.each do |name, params|
+          create_component(name, params) 
+        end
+        #create_component(Connection, self)
+        #create_component(Buzzer, self)
+        #create_component(LCD, self)
+        #create_component(CardReader, self)
       end
 
-      def create_component(class_name, *args)
-        c = class_name.new(*args)
-        logger.info "Starting component: #{class_name}"
+      def create_component(name, params)
+        klass = Agent.const_get(params[:class_name])
+        c = klass.new(name, self, params[:options])
+        c.instance_eval(&params[:block]) if params[:block] 
+        logger.info "Starting component #{name}:#{klass}"
         yield c if block_given?
         c.run
-        @components[class_name] = c
-        
-        c
+        @components[name] = c
       end
 
-      def restart_component(class_name)
-        if old_component = @components[class_name]
-          logger.info "Stopping component: #{class_name}"
+      def restart_component(name)
+        if old_component = @components[name]
+          params = Config.components[name]
+          logger.info "Stopping component: #{name}"
           old_component.stop # TODO: set timeout for stopping?
-          logger.info "Restarting component: #{class_name}"
-          create_component(class_name, self)
+          logger.info "Restarting component: #{name}"
+          create_component(name, params)
         else
-          logger.error "Rstart component failed: unknown component #{name}"
+          logger.error "Restart component failed: unknown component #{name}"
         end
       end
 
