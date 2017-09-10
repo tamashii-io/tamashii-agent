@@ -5,7 +5,7 @@ module Tamashii
     module Device
       module Buzzer
         class Dummy < Base
-          def initialize(component, options = {})
+          def initialize(*args)
             super
             logger.debug "Initialized"
           end
@@ -22,7 +22,7 @@ module Tamashii
             logger.debug "Played: Error"
           end
 
-          def stop
+          def shutdown
             logger.debug "Stopped"
           end
         end

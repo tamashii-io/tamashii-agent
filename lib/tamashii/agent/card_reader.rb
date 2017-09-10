@@ -1,10 +1,7 @@
-require 'mfrc522'
 require 'concurrent'
 
 require 'tamashii/agent/component'
 require 'tamashii/agent/event'
-require 'tamashii/agent/adapter/card_reader'
-
 
 module Tamashii
   module Agent
@@ -14,8 +11,15 @@ module Tamashii
 
       def initialize(name, master, options = {})
         super
-        @reader = Adapter::CardReader.object
-        logger.debug "Using card_reader instance: #{@reader.class}"
+        @reader = initialize_device
+      end
+
+      def default_device_name
+        'Dummy'
+      end
+
+      def get_device_class_name(device_name)
+        "CardReader::#{device_name}"
       end
 
       def reset_error_timer
@@ -49,27 +53,23 @@ module Tamashii
       end
 
       def handle_card
-        # read card
-        return false unless @reader.picc_request(MFRC522::PICC_REQA)
-
-        begin
-          uid, sak = @reader.picc_select
-          process_uid(uid.join("-"))
+        uid = @reader.poll_uid
+        case uid
+        when nil
+          return false
+        when :error
+          set_error_timer
+          return false
+        else
+          process_uid(uid)
           reset_error_timer
-        rescue CommunicationError, UnexpectedDataError => e
-          logger.error "Error when selecting card: #{e.message}"
-          set_error_timer
-        rescue => e
-          logger.error "GemError when selecting card: #{e.message}"
-          set_error_timer
+          return true
         end
-        @reader.picc_halt
-        true
       end
 
       def process_uid(uid)
         logger.info "New card detected, UID: #{uid}"
-        @master.send_event(Event.new(Event::CARD_DATA, uid))
+        @master.send_event(Event.new(Event::CARD_DATA, uid.join('-')))
       end
 
       # override

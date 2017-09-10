@@ -51,9 +51,9 @@ module Tamashii
 
       def create_component(name, params)
         klass = Agent.const_get(params[:class_name])
+        logger.info "Starting component #{name}:#{klass}"
         c = klass.new(name, self, params[:options])
         c.instance_eval(&params[:block]) if params[:block] 
-        logger.info "Starting component #{name}:#{klass}"
         yield c if block_given?
         c.run
         @components[name] = c
@@ -130,6 +130,7 @@ module Tamashii
         @components.each_value do |c|
           c.stop
         end
+        logger.info "Master stopped"
       end
 
 

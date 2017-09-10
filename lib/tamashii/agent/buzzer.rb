@@ -34,7 +34,7 @@ module Tamashii
 
       def clean_up
         super
-        @buzzer.stop
+        @buzzer.shutdown
       end
     end
   end

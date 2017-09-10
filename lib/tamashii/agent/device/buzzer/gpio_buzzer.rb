@@ -13,13 +13,13 @@ module Tamashii
           REPEAT_INTERVAL = 0.1
           LOW_FREQ = 0.7
 
-          def initialize(component, options = {})
+          def initialize(*args)
             super
             setup_pwm
           end
 
-          def stop
-            @pwm.off
+          def shutdown
+            stop
           end
 
           def play_ok
@@ -35,6 +35,10 @@ module Tamashii
           end
 
           private
+
+          def stop
+            @pwm.off
+          end
 
           def setup_pwm
             unless pin = @options[:pin]

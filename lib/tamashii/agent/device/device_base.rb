@@ -10,6 +10,10 @@ module Tamashii
           @component = component
           @options = options
         end
+
+        def shutdown
+          logger.warn "Device '#{self.class}' does not implement a shutdown method"
+        end
       end
     end
   end
