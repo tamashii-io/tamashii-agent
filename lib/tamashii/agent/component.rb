@@ -51,7 +51,7 @@ module Tamashii
       end
       
       def stop
-        logger.info "Stopping component"
+        logger.info "Stopping component #{@name}"
         stop_threads
         clean_up
       end
