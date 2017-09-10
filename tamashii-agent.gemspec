@@ -44,7 +44,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "websocket-driver"
   spec.add_runtime_dependency "nio4r"
   spec.add_runtime_dependency "pi_piper"
-  spec.add_runtime_dependency "tamashii-mfrc522"
+  spec.add_runtime_dependency "tamashii-mfrc522", ">=1.0.8"
   spec.add_runtime_dependency "i2c"
   spec.add_runtime_dependency "aasm"
   spec.add_runtime_dependency "concurrent-ruby"
