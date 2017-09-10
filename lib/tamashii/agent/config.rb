@@ -10,8 +10,6 @@ module Tamashii
 
       register :localtime, "+08:00"
 
-      register :lcd_path, '/dev/i2c-1'
-      register :lcd_address, 0x27
       register :lcd_animation_delay, 1
 
 

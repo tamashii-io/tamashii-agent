@@ -84,6 +84,7 @@ module Tamashii
         get_device_instance(device_name)
       rescue => e
         logger.error "Error when loading device: #{e.message}"
+        e.backtrace.each {|msg| logger.error msg}
         logger.error "Fallback to default: #{default_device_name}"
         load_default_device
       end

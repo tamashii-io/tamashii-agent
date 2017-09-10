@@ -2,12 +2,10 @@ require 'concurrent'
 
 require 'tamashii/agent/common'
 require 'tamashii/agent/event'
-require 'tamashii/agent/adapter/lcd'
-
 
 module Tamashii
   module Agent
-    class LCD < Component
+    class Lcd < Component
 
       class LineAnimator
         include Common::Loggable
@@ -79,8 +77,8 @@ module Tamashii
 
       def initialize(name, master, options = {})
         super
-        load_lcd_device
-        @device_line_count = @lcd.class::LINE_COUNT
+        @lcd = initialize_device
+        @device_line_count = @lcd.line_count
         @device_lock = Mutex.new
         create_line_animators
         set_idle_text("[Tamashii]\nIdle...")
@@ -89,19 +87,19 @@ module Tamashii
         schedule_to_print_idle
       end
 
+      def default_device_name
+        'Dummy'
+      end
+
+      def get_device_class_name(device_name)
+        "Lcd::#{device_name}"
+      end
+
       def create_line_animators
-        LineAnimator.line_width = @lcd.class::WIDTH
+        LineAnimator.line_width = @lcd.width
         LineAnimator.handler_print_line = method(:print_line)
         @line_animators = [] 
         @device_line_count.times {|i| @line_animators << LineAnimator.new(i)}
-      end
-
-      def load_lcd_device
-        @lcd = Adapter::LCD.object
-      rescue => e
-        logger.error "Unable to load LCD instance: #{Adapter::LCD.current_class}"
-        logger.error "Use #{Adapter::LCD.fake_class} instead"
-        @lcd = Adapter::LCD.fake_class.new
       end
 
       def print_message(message)
@@ -185,8 +183,8 @@ module Tamashii
       end
 
       def clean_up
-        clear_screen
         super
+        @lcd.shutdown
       end
     end
   end
