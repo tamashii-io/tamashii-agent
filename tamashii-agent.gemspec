@@ -40,7 +40,7 @@ Gem::Specification.new do |spec|
 
 
   spec.add_runtime_dependency "tamashii-common", ">=0.1.6"
-  spec.add_runtime_dependency "tamashii-client"
+  spec.add_runtime_dependency "tamashii-client", ">=0.1.2"
   spec.add_runtime_dependency "websocket-driver"
   spec.add_runtime_dependency "nio4r"
   spec.add_runtime_dependency "pi_piper"
