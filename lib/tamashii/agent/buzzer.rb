@@ -1,14 +1,20 @@
 require 'tamashii/agent/component'
 require 'tamashii/agent/event'
-require 'tamashii/agent/adapter/buzzer'
 
 module Tamashii
   module Agent
     class Buzzer < Component
       def initialize(name, master, options = {})
         super
-        @buzzer = Adapter::Buzzer.object
-        logger.debug "Using buzzer instance: #{@buzzer.class}"
+        @buzzer = initialize_device
+      end
+
+      def default_device_name
+        'Dummy'
+      end
+
+      def get_device_class_name(device_name)
+        "Buzzer::#{device_name}"
       end
 
       def process_event(event)

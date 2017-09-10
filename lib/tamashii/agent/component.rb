@@ -7,9 +7,12 @@ module Tamashii
     class Component
       include Common::Loggable
 
+      class LoadDeviceError < RuntimeError; end
+
       def initialize(name, master, options = {})
         @name = name
         @master = master
+        @options = options
         @event_queue = Queue.new
       end
 
@@ -73,6 +76,36 @@ module Tamashii
             break
           end
         end
+      end
+
+      def initialize_device
+        device_name = @options[:device] || default_device_name
+        logger.info "Using device: #{device_name}"
+        get_device_instance(device_name)
+      rescue => e
+        logger.error "Error when loading device: #{e.message}"
+        logger.error "Fallback to default: #{default_device_name}"
+        load_default_device
+      end
+
+      def get_device_instance(device_name)
+        klass = Common.load_device_class(get_device_class_name(device_name))
+        klass.new(self, @options)
+      end
+
+      def load_default_device
+        logger.info "loading default device: #{default_device_name}"
+        get_device_instance(default_device_name)
+      rescue => e
+        raise LoadDeviceError, "Unable to load device: #{e.message}"
+      end
+
+      def default_device_name
+        raise NotImplementedError
+      end
+
+      def get_device_class_name(device_name)
+        raise NotImplementedError
       end
     end
   end

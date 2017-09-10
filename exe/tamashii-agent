@@ -77,7 +77,7 @@ begin
   when :token
     raise LoadError.new("Token authorization require to set token") if config.token.nil?
   end
-  agent = Tamashii::Agent::Master.new(config.manager_host, config.manager_port)
+  agent = Tamashii::Agent::Master.new
 
 
   Signal.trap("TERM") do
