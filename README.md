@@ -114,7 +114,7 @@ The configuration above does not drive any extra components such as NFC readers 
 
 Following program is a simple server based on [Tamashii Manager](https://github.com/tamashii-io/tamashii-manager). In this example, the Agent will play a beep sound when swiping the RFID card on the reader. 
 
-> **Note**: you need to connect a RFID reader (either MFRC522 or PN532) and a DC buzzer to your Raspberry PI. Please refer to [this page](#) about the setup details. 
+> **Note**: you need to connect a RFID reader (either MFRC522 or PN532) and a DC buzzer to your Raspberry PI. Please refer to [this page](https://github.com/tamashii-io/tamashii-agent/tree/master/lib/tamashii/agent/device) about the setup details. 
 
 > **Note**: the code below requires Tamashii Manager correctly installed on your system. You may need to install some dependencies such as `redis`.
 
