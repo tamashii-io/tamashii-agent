@@ -5,7 +5,7 @@ module Tamashii
   module Agent
     module Device
       module Buzzer
-        class GpioBuzzer < Base
+        class PwmBuzzer < Base
 
           DEFAULT_PIN = 18
           SHORT_PLAY_TIME = 0.2

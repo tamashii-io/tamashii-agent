@@ -25,7 +25,7 @@ You can choose which components to be integrated into your application in [confi
 - LCD Displays
     - LCM 1602 (I2C)
 - Buzzers
-    - DC buzzer using GPIO
+    - DC buzzer using PWM(GPIO)
 
 For pin layout of each component module, please refer to [this page](#).
 
@@ -184,8 +184,8 @@ Tamashii::Agent.config do
   port 3000
 
   # components to use
-  # the buzzer to play 'beep' sound. Assume the GPIO buzzer is connected at pin 19
-  add_component :buzzer, 'Buzzer', device: 'GpioBuzzer', pin: 19
+  # the buzzer to play 'beep' sound. Assume the PWM buzzer is connected at pin 19
+  add_component :buzzer, 'Buzzer', device: 'PwmBuzzer', pin: 19
   
   # card readers
   # assume the PN532 NFC module is connected via UART interface
