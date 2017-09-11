@@ -13,11 +13,11 @@ Tamashii Agent is designed and tested on Raspberry PI 3 (running Raspbian Jessie
 
 You need to install this gem on a real devices to make it work. Following sections assume you are operating on a correctly configured Raspberry PI. 
 
->**Note**: we also provides **dummy** devices. These devices will simulates the behavior of those real devices such as RFID readers and buzzers. With them, the Tamashii Agent doesn't need to be executed on Raspberry PI. You can also run Tamashii Agent on non-Raspberry PI devices such as desktop Linux or Mac. Please refer to [this section](#).
+>**Note**: we also provides **dummy** devices. These devices will simulates the behavior of those real devices such as RFID readers and buzzers. With them, the Tamashii Agent doesn't need to be executed on Raspberry PI. You can also run Tamashii Agent on non-Raspberry PI devices such as desktop Linux or Mac. Please refer to [this section](#dummy-devices).
 
 Tamashii Agent comes with some common hardware-related module. They wrap the low-level operation of the devices. 
 
-You can choose which components to be integrated into your application in [configuration file](#). Currently it supports follow hardware that can be attached to a Raspberry PI:
+You can choose which components to be integrated into your application in [configuration file](#configuration-and-execution). Currently it supports follow hardware that can be attached to a Raspberry PI:
 
 - RFID/NFC modules
     - MFRC522 RFID reader (SPI)
@@ -25,9 +25,9 @@ You can choose which components to be integrated into your application in [confi
 - LCD Displays
     - LCM 1602 (I2C)
 - Buzzers
-    - DC buzzer using PWM(GPIO)
+    - DC buzzer using PWM
 
-For pin layout of each component module, please refer to [this page](#).
+For pin layout of each component module, please refer to [this page](https://github.com/tamashii-io/tamashii-agent/tree/master/lib/tamashii/agent/device).
 
 
 ## Installation
@@ -248,3 +248,4 @@ Installation the version of development on localhost
 Please report to us on [Github](https://github.com/tamashii-io/tamashii-agent) if there is any bug or suggested modified.
 
 The project was developed by [5xruby Inc.](https://5xruby.tw/)
+
