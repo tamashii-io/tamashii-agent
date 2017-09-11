@@ -65,7 +65,7 @@ module Tamashii
             handle type,  Handler::System, env_data
           end
           [Type::LCD_MESSAGE, Type::LCD_SET_IDLE_TEXT].each do |type|
-            handle type,  Handler::LCD, env_data
+            handle type,  Handler::Lcd, env_data
           end
           handle Type::BUZZER_SOUND,  Handler::Buzzer, env_data
           handle Type::RFID_RESPONSE_JSON,  Handler::RemoteResponse, env_data

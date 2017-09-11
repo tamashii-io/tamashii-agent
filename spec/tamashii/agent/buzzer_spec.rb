@@ -1,21 +1,21 @@
 require 'spec_helper'
+require 'tamashii/agent/device/buzzer/dummy'
+require 'tamashii/agent/master'
 
 RSpec.describe Tamashii::Agent::Buzzer do
   
   let(:ivar_buzzer) { subject.instance_variable_get(:@buzzer) }
 
-  let(:master) {
-    obj = double()
-    allow(obj).to receive(:send_event)
-    obj
-  }
+  let(:master) { instance_double(Tamashii::Agent::Master) }
+  let(:name) { :buzzer }
+  let(:device_class_name) { 'Dummy' }
+  let(:options) { {device: device_class_name} }
 
-  subject { described_class.new(master) }
+  subject { described_class.new(name, master, options) }
 
-  describe "#initialize" do
-    it "creates a buzzer by calling Adapter::Buzzer.object" do
-      expect(Tamashii::Agent::Adapter::Buzzer).to receive(:object)
-      subject
+  describe "#initialize_device" do
+    it "create a device from options" do
+      expect(ivar_buzzer).to be_a Tamashii::Agent::Device::Buzzer::Dummy
     end
   end
 
@@ -25,6 +25,12 @@ RSpec.describe Tamashii::Agent::Buzzer do
       expect(ivar_buzzer).not_to receive(:play_no)
       expect(ivar_buzzer).not_to receive(:play_error)
       subject.process_event(Tamashii::Agent::Event.new(ev_type, ev_body))
+    end
+  end
+
+  describe "#default_device_name" do
+    it "equals to Dummy device" do
+      expect(subject.default_device_name).to eq device_class_name
     end
   end
 
@@ -61,8 +67,8 @@ RSpec.describe Tamashii::Agent::Buzzer do
   end
 
   describe "#clean_up" do
-    it "calls the Buzzer#stop" do
-      expect(ivar_buzzer).to receive(:stop)
+    it "calls the Buzzer#shutdown" do
+      expect(ivar_buzzer).to receive(:shutdown)
       subject.clean_up
     end
   end

@@ -4,7 +4,7 @@ require 'tamashii/agent/handler/base'
 module Tamashii
   module Agent
     module Handler
-      class LCD < Base
+      class Lcd < Base
         def resolve(data)
           case type
           when Type::LCD_MESSAGE

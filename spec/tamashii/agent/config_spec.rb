@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'securerandom'
 
 RSpec.describe Tamashii::Agent::Config do
   
@@ -101,6 +102,33 @@ RSpec.describe Tamashii::Agent::Config do
         expect(Tamashii::Client::Config).to receive(method_name)
         subject.send(method_name)
       end
+    end
+  end
+
+  describe "#add_component" do
+    let(:new_component_name) { :new_name }
+    let(:new_component_class) { 'Component' }
+    let(:new_component_option) { {} }
+    let(:new_component_block) { proc { } }
+
+    it "adds the new component into to components" do
+      subject.add_component(new_component_name, new_component_class, new_component_option, &new_component_block)
+      expect(subject.components[new_component_name]).to eq({class_name: new_component_class, options: new_component_option, block: new_component_block})
+    end
+  end
+  describe "#remove_component" do
+    let(:new_component_name) { :new_name }
+    let(:new_component_class) { 'Component' }
+    let(:new_component_option) { {} }
+    let(:new_component_block) { proc { } }
+    before do
+      subject.add_component(new_component_name, new_component_class, new_component_option, &new_component_block)
+    end
+
+    it "removes the new component from components" do
+      expect(subject.components[new_component_name]).not_to be nil
+      subject.remove_component(new_component_name)
+      expect(subject.components.has_key?(new_component_name)).to be false
     end
   end
 

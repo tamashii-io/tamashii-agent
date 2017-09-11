@@ -1,5 +1,12 @@
 require 'spec_helper'
 
+module Tamashii
+  module Agent
+    class DummyComponent < Component
+    end
+  end
+end
+
 RSpec.describe Tamashii::Agent::Master do
 
 
@@ -19,18 +26,33 @@ RSpec.describe Tamashii::Agent::Master do
     obj
   end
 
-  let(:ivar_components) { subject.instance_variable_get(:@components) }
+  let(:dummy_instance_double) {instance_double(Tamashii::Agent::DummyComponent)  }
 
-  subject { described_class.new(serv_host, serv_port) }
+  def ivar_components 
+    subject.instance_variable_get(:@components)
+  end
+
+  let(:component1_param) {
+      { class_name: 'DummyComponent', options: { type: "1"}, block: proc {}  }
+  }
+  let(:component2_param) {
+      { class_name: 'DummyComponent', options: { type: "2"}, block: proc {}  }
+  }
+  let(:components) {
+    {
+      name1: component1_param,
+      name2: component2_param
+    }
+  }
+
+  before do
+    expect(Tamashii::Agent::Config).to receive(:components).and_return(components)
+  end
 
   shared_examples "broadcast to components" do |arg_event|
     it "let all component receive same events" do
-      expect(component_instance).to have_received(:send_event).with(arg_event).exactly(ivar_components.size).times
+      expect(dummy_instance_double).to have_received(:send_event).with(arg_event).exactly(ivar_components.size).times
     end
-  end
-
-  before do
-    allow_any_instance_of(described_class).to receive(:create_component).and_return(component_instance)
   end
 
   describe "#initialize" do
@@ -38,10 +60,9 @@ RSpec.describe Tamashii::Agent::Master do
       allow_any_instance_of(described_class).to receive(:get_serial_number).and_return(serial_number)
     end
 
-    it 'creates all components' do
-      expect_any_instance_of(described_class).to receive(:create_component).with(Tamashii::Agent::Connection, any_args)
-      expect_any_instance_of(described_class).to receive(:create_component).with(Tamashii::Agent::Buzzer, any_args)
-      expect_any_instance_of(described_class).to receive(:create_component).with(Tamashii::Agent::CardReader, any_args)
+    it 'creates all components described in config' do
+      expect_any_instance_of(described_class).to receive(:create_component).with(:name1, component1_param)
+      expect_any_instance_of(described_class).to receive(:create_component).with(:name2, component2_param)
       subject
     end
 
@@ -51,9 +72,18 @@ RSpec.describe Tamashii::Agent::Master do
   end
 
   describe "#create_component" do
-    it "create a component and return it" do
-      dummy_class = double()
-      expect(subject.create_component(dummy_class)).to be component_instance
+    let(:component_name) { :name }
+    let(:component_class) { 'DummyComponent' }
+    let(:component_params) { {class_name: component_class, options: {}  }}
+    let(:component_instance) { instance_double(Tamashii::Agent::DummyComponent) }
+    before do
+      allow(Tamashii::Agent::DummyComponent).to receive(:new).and_return(component_instance)
+      allow(component_instance).to receive(:run)
+    end
+    it "runs the component and added it into components" do
+      subject.create_component(component_name, component_params)
+      expect(ivar_components[component_name]).to be component_instance
+      expect(component_instance).to have_received(:run).exactly(3).times
     end
   end
 
@@ -71,6 +101,9 @@ RSpec.describe Tamashii::Agent::Master do
 
     context "when the connection is not ready" do
       before do
+        allow(Tamashii::Agent::DummyComponent).to receive(:new).and_return(dummy_instance_double)
+        allow(dummy_instance_double).to receive(:run)
+        allow(dummy_instance_double).to receive(:send_event)
         subject.process_event(Tamashii::Agent::Event.new(Tamashii::Agent::Event::CONNECTION_NOT_READY, "ABC"))
       end
       it_behaves_like "broadcast to components", Tamashii::Agent::Event.new(Tamashii::Agent::Event::BEEP, "error")
@@ -79,6 +112,9 @@ RSpec.describe Tamashii::Agent::Master do
     context "when the message is not recognized" do
       let(:component_instance) { spy('component') }
       before do 
+        allow(Tamashii::Agent::DummyComponent).to receive(:new).and_return(dummy_instance_double)
+        allow(dummy_instance_double).to receive(:run)
+        allow(dummy_instance_double).to receive(:send_event)
         subject.process_event(Tamashii::Agent::Event.new(987654321, "ABC"))
       end
       it_behaves_like "broadcast to components", Tamashii::Agent::Event.new(987654321, "ABC")
@@ -86,9 +122,14 @@ RSpec.describe Tamashii::Agent::Master do
   end
 
   describe "#stop" do
+    before do
+      allow(Tamashii::Agent::DummyComponent).to receive(:new).and_return(dummy_instance_double)
+      allow(dummy_instance_double).to receive(:run)
+      allow(dummy_instance_double).to receive(:stop)
+    end
     it "stops all components" do
-      expect(component_instance).to receive(:stop).exactly(ivar_components.size).times
       subject.stop
+      expect(dummy_instance_double).to have_received(:stop).exactly(ivar_components.size).times
     end
   end
 end

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-RSpec.describe Tamashii::Agent::Connection do
+RSpec.describe Tamashii::Agent::Networking do
   let!(:id) { rand(256) }
   let!(:ev_type) { rand(256) }
   let!(:req_ev_type) { ev_type }
@@ -23,10 +23,13 @@ RSpec.describe Tamashii::Agent::Connection do
   let(:master) { instance_double(Tamashii::Agent::Master) }
   let(:client_instance) { instance_double(Tamashii::Client::Base) }
 
+  let(:name) { :networking }
+  let(:options) { {} }
+
   subject do 
     # mock ws client
     allow(Tamashii::Client::Base).to receive(:new).and_return(client_instance)
-    described_class.new(master)
+    described_class.new(name, master, options)
   end
 
   before do

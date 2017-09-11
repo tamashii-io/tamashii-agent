@@ -1,34 +1,24 @@
 require 'spec_helper'
+require 'tamashii/agent/master'
 
-RSpec.describe Tamashii::Agent::LCD do
+RSpec.describe Tamashii::Agent::Lcd do
   
   let(:ivar_lcd) { subject.instance_variable_get(:@lcd) }
   let(:ivar_device_lock) { subject.instance_variable_get(:@device_lock) }
   let(:ivar_idle_text) { subject.instance_variable_get(:@idle_text) }
   let(:idle_text) { "Idle Message" }
   let(:message) { "MESSAGE" }
-  let!(:master) do 
-    obj = double()
-    allow(obj).to receive(:send_event)
-    obj
-  end
 
-  subject { described_class.new(master) }
+  let(:master) { instance_double(Tamashii::Agent::Master) }
+  let(:name) { :lcd }
+  let(:device_class_name) { 'Dummy' }
+  let(:options) { {device: device_class_name} }
 
-  describe "#initialize" do
-    it "creates a reader by calling Adapter::LCD.object" do
-      expect(Tamashii::Agent::Adapter::LCD).to receive(:object).and_call_original
-      subject
-    end
+  subject { described_class.new(name, master, options) }
 
-    context "when device creation has error" do
-      before do
-        allow(Tamashii::Agent::Adapter::LCD).to receive(:object).and_throw(RuntimeError.new("error"))
-      end
-      it "create Adapter::LCD.fake_class as @lcd" do
-        expect(ivar_lcd).to be_a Tamashii::Agent::Adapter::LCD.fake_class
-        subject
-      end
+  describe "#initialize_device" do
+    it "create a device from options" do
+      expect(ivar_lcd).to be_a Tamashii::Agent::Device::Lcd::Dummy
     end
   end
 

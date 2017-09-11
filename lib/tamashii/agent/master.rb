@@ -43,10 +43,6 @@ module Tamashii
         Config.components.each do |name, params|
           create_component(name, params) 
         end
-        #create_component(Connection, self)
-        #create_component(Buzzer, self)
-        #create_component(LCD, self)
-        #create_component(CardReader, self)
       end
 
       def create_component(name, params)

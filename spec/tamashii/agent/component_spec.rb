@@ -1,4 +1,6 @@
 require 'spec_helper'
+require 'tamashii/agent/master'
+require 'tamashii/agent/device/device_base'
 
 RSpec.describe Tamashii::Agent::Component do
  
@@ -6,13 +8,12 @@ RSpec.describe Tamashii::Agent::Component do
   let(:ev_body) { "test body" }
   let(:event) { Tamashii::Agent::Event.new(ev_type, ev_body) }
   let(:event_queue) { subject.instance_variable_get(:@event_queue) }
-  let(:master) {
-    obj = double()
-    allow(obj).to receive(:send_event)
-    obj
-  }
 
-  subject { described_class.new(master) }
+  let(:master) { instance_double(Tamashii::Agent::Master) }
+  let(:name) { :component }
+  let(:options) { {} }
+
+  subject { described_class.new(name, master, options) }
 
   describe '#send_event' do
     it "can be called with a event, which can be checked right after" do
@@ -77,9 +78,56 @@ RSpec.describe Tamashii::Agent::Component do
   end
 
   describe "#restart_current_component_async" do
-    it "createa restart event to master using its class name as param" do
-      expect(master).to receive(:send_event).with(Tamashii::Agent::Event.new(Tamashii::Agent::Event::RESTART_COMPONENT, described_class))
+    it "createa restart event to master using its class as param" do
+      expect(master).to receive(:send_event).with(Tamashii::Agent::Event.new(Tamashii::Agent::Event::RESTART_COMPONENT, name))
       subject.restart_current_component_async
     end
   end
+
+
+  describe "#initialize_device" do
+    let(:device_instance) { instance_double(Tamashii::Agent::Device::DeviceBase) }
+    let(:default_device_instance) { instance_double(Tamashii::Agent::Device::DeviceBase) }
+    let(:device_name) { 'Device' }
+    let(:default_device_name) { 'DefaultDevice' }
+    before do
+      allow(subject).to receive(:load_default_device).and_return(default_device_instance)
+      allow(subject).to receive(:default_device_name).and_return default_device_name
+    end
+    context "when we can successfully get the device instance" do
+      before do
+        expect(subject).to receive(:get_device_instance).and_return device_instance
+      end
+
+      it "returns a device instance" do
+        expect(subject.initialize_device).to be device_instance
+      end
+    end
+
+    context "when get device instance raise error" do
+      before do
+        expect(subject).to receive(:get_device_instance).and_raise RuntimeError
+      end
+      it "returns a default device" do
+        expect(subject.initialize_device).to be default_device_instance
+      end
+    end
+  end
+
+  describe "#load_default_device" do
+    let(:default_device_instance) { instance_double(Tamashii::Agent::Device::DeviceBase) }
+    let(:default_device_name) { 'DefaultDevice' }
+    before do
+      allow(subject).to receive(:get_device_instance).with(default_device_name).and_return(default_device_instance)
+      allow(subject).to receive(:default_device_name).and_return default_device_name
+    end
+
+    it "returns a default device" do
+      expect(subject.load_default_device).to be default_device_instance
+      allow(subject).to receive(:default_device_name).and_return default_device_name
+    end
+
+  end
+
+
 end
