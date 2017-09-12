@@ -7,7 +7,6 @@ module Tamashii
       module Buzzer
         class PwmBuzzer < Base
 
-          DEFAULT_PIN = 18
           SHORT_PLAY_TIME = 0.2
           LONG_PLAY_TIME = 0.5
           REPEAT_INTERVAL = 0.1
@@ -34,6 +33,10 @@ module Tamashii
             play_repeat_long(3)
           end
 
+          def default_pin
+            19
+          end
+
           private
 
           def stop
@@ -41,10 +44,7 @@ module Tamashii
           end
 
           def setup_pwm
-            unless pin = @options[:pin]
-              logger.warn "No GPIO pin given. Using default: #{DEFAULT_PIN}"
-              pin = DEFAULT_PIN
-            end
+            pin = fetch_option(:pin, default_pin)
             @pwm = PiPiper::Pwm.new pin: pin #, mode: :markspace
             @pwm.off
             @pwm.value = 1.0

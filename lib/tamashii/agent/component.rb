@@ -108,6 +108,10 @@ module Tamashii
       def get_device_class_name(device_name)
         raise NotImplementedError
       end
+
+      def display_name
+        @name
+      end
     end
   end
 end

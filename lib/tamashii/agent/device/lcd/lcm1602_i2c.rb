@@ -58,29 +58,9 @@ module Tamashii
 
           private
 
-          def fetch_address
-            if @options.has_key?(:address)
-              address = @options[:address]
-            else
-              address = default_address
-              logger.warn "No address specified. Use default address: #{address.to_s(16)}"
-            end
-            address
-          end
-
-          def fetch_path
-            if @options.has_key?(:path)
-              path = @options[:path]
-            else
-              path = default_path
-              logger.warn "No path specified. Use default path: #{path}"
-            end
-            path
-          end
-
           def initialize_lcd
-            @lcd = I2C.create(fetch_path)
-            @address = fetch_address
+            @lcd = I2C.create(fetch_option(:path, default_path))
+            @address = fetch_option(:address, default_address)
             @backlight = @options.fetch(:backlight, true)
 
             byte(0x33, OP_CMD)

@@ -10,7 +10,11 @@ module Tamashii
         end
 
         def progname
-          @progname ||= ("%-10s" % self.class.to_s.split(":")[-1])
+          @progname ||= ("%-10s" % display_name)
+        end
+
+        def display_name
+          self.class.to_s.split(":")[-1]
         end
       end
     end

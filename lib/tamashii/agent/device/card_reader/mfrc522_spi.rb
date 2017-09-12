@@ -9,7 +9,11 @@ module Tamashii
 
           def initialize(*args)
             super
-            @reader = MFRC522.new
+            @reader = MFRC522.new(fetch_option(:reset_pin, default_reset_pin))
+          end
+
+          def default_reset_pin
+            24
           end
 
           def poll_uid
