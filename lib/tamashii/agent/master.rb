@@ -3,9 +3,8 @@ require 'tamashii/agent/networking'
 require 'tamashii/agent/lcd'
 require 'tamashii/agent/buzzer'
 require 'tamashii/agent/card_reader'
+require 'tamashii/agent/keyboard'
 require 'tamashii/agent/event'
-
-require 'thread'
 
 module Tamashii
   module Agent
