@@ -34,7 +34,7 @@ module Tamashii
           end
 
           def default_pin
-            19
+            18
           end
 
           private
