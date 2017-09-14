@@ -89,7 +89,8 @@ Following figure shows a typical Raspberry PI and pins on it.
 
 If you have the UART to USB adapter in this case, the setup is much simpler. You don't need to disable Bluetooth described in the previous section. Instead, after setup serial via `rasp-config` and install `libnfc`, you have to do the following step: 
 
-- Find out the USB device name of your PN532 via USB adapter. If it is the only USB device on your Raspberry PI, it should be `/dev/ttyUSB0`. You can find more information by executing command `dmesg`
+- Attach yout PN532 to the UART-to-USB adapter, then plug it into USB port on your Raspberry PI. 
+- Find out the USB device name of your PN532. If it is the only USB device on your Raspberry PI, it should be `/dev/ttyUSB0`. You can find more information by executing command `dmesg`
 - Create or modify `libnfc` configuration file. Modify or create one of the following files (assume your device is at `/dev/ttyUSB0`. Modify it to match your need):
     - `/etc/nfc/libnfc.conf`
         ```
