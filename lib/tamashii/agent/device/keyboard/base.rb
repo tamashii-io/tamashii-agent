@@ -10,13 +10,17 @@ module Tamashii
           def initialize(*args)
             super(*args)
             initialize_hardware
-            @number_of_keys = fetch_option(:number_of_keys, default_number_of_keys)
+            @number_of_keys = number_of_keys
             @watcher_mode = fetch_option(:watch, default_watch)
             @watcher_stopping = Concurrent::AtomicBoolean.new(false)
             if @watcher_mode
               initialize_watcher
               start_watcher_thread
             end
+          end
+
+          def number_of_keys
+            fetch_option(:number_of_keys, default_number_of_keys)
           end
 
           def default_number_of_keys
@@ -75,7 +79,7 @@ module Tamashii
           end
 
           def watcher_loop
-            puts "watcher started"
+            logger.debug "Watcher started"
             loop do
               if watcher_stopping?
                 break

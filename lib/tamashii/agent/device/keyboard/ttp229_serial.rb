@@ -33,8 +33,8 @@ module Tamashii
           end
           
           def finalize_hardware
-            unexport_pin(fetch_option(:scl_pin, default_scl_pin))
-            unexport_pin(fetch_option(:sdo_pin, default_sdo_pin))
+            unexport_pin(@scl_pin.pin)
+            unexport_pin(@sdo_pin.pin)
           end
 
           def read_key

@@ -3,7 +3,7 @@ require 'tamashii/agent/networking'
 require 'tamashii/agent/lcd'
 require 'tamashii/agent/buzzer'
 require 'tamashii/agent/card_reader'
-require 'tamashii/agent/keyboard'
+require 'tamashii/agent/keyboard_logger'
 require 'tamashii/agent/event'
 
 module Tamashii

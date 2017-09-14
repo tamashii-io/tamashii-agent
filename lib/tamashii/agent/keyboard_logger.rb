@@ -3,7 +3,7 @@ require 'tamashii/agent/event'
 
 module Tamashii
   module Agent
-    class Keyboard < Component
+    class KeyboardLogger < Component
       def initialize(name, master, options = {})
         options[:watch] = true # Force enable watch mode
         super
