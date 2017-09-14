@@ -83,7 +83,29 @@ Following figure shows a typical Raspberry PI and pins on it.
         
     - Remove `console=serial0` from `/boot/cmdline.txt`, if any.
     - Reboot
- 
+    - Check whether your PN532 works by using `nfc-list`
+    
+#### PN532 via UART to USB adapter
+
+If you have the UART to USB adapter in this case, the setup is much simpler. You don't need to disable Bluetooth described in the previous section. Instead, after setup serial via `rasp-config` and install `libnfc`, you have to do the following step: 
+
+- Find out the USB device name of your PN532 via USB adapter. If it is the only USB device on your Raspberry PI, it should be `/dev/ttyUSB0`. You can find more information by executing command `dmesg`
+- Create or modify `libnfc` configuration file. Modify or create one of the following files (assume your device is at `/dev/ttyUSB0`. Modify it to match your need):
+    - `/etc/nfc/libnfc.conf`
+        ```
+        device.name = "PN532 board via USB"
+        device.connstring = "pn532_uart:/dev/ttyUSB0"
+        ``` 
+
+    - or `/etc/nfc/devices.d/pn53x_usb.conf`
+        ```
+        name = "PN532 board via USB
+        connstring = pn532_uart:/dev/ttyUSB0
+        ```
+- Reboot
+- Check whether your PN532 works by using `nfc-list`
+
+
 
 ## LCDs
 
