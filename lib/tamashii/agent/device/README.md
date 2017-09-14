@@ -8,7 +8,7 @@ Following figure shows a typical Raspberry PI and pins on it.
 
 ## Buzzers
 
-### PWM buzzer
+### SFM-27-W buzzer via PWM
 
 ![PWM Buzzer](https://tamashii.io/images/devices/pwm_buzzer.jpg)
 
