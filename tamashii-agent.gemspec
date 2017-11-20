@@ -39,8 +39,10 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "pry"
 
 
-  spec.add_runtime_dependency "tamashii-common", ">=0.1.6"
-  spec.add_runtime_dependency "tamashii-client", ">=0.1.2"
+  spec.add_runtime_dependency "tamashii-common", ">=0.2"
+  spec.add_runtime_dependency "tamashii-client", ">=0.2"
+  spec.add_runtime_dependency "tamashii-config"
+  spec.add_runtime_dependency "tamashii-hookable"
   spec.add_runtime_dependency "websocket-driver"
   spec.add_runtime_dependency "nio4r"
   spec.add_runtime_dependency "pi_piper"
