@@ -2,15 +2,37 @@ require 'tamashii/common'
 require 'tamashii/client'
 module Tamashii
   module Agent
-    class Config < Tamashii::Config
+    class Config
+      class << self
+        def instance
+          @instance ||= Config.new
+        end
+
+        def respond_to_missing?(name, _all = false)
+          super
+        end
+
+        def method_missing(name, *args, &block)
+          # rubocop:disable Metrics/LineLength
+          return instance.send(name, *args, &block) if instance.respond_to?(name)
+          # rubocop:enable Metrics/LineLength
+          super
+        end
+      end
+
+      include Tamashii::Configurable
+
       AUTH_TYPES = [:none, :token]
 
-      register :default_components, {networking: {class_name: :Networking, options: {}}}
-      register :connection_timeout, 3
+      config :default_components, default: {networking: {class_name: :Networking, options: {}}}
+      config :connection_timeout, default: 3
 
-      register :localtime, "+08:00"
+      config :env, deafult: nil
+      config :token
 
-      register :lcd_animation_delay, 1
+      config :localtime, default: "+08:00"
+
+      config :lcd_animation_delay, default: 1
 
 
       def auth_type(type = nil)
@@ -27,7 +49,7 @@ module Tamashii
 
       def log_file(value = nil)
         return @log_file ||= STDOUT if value.nil?
-        Client.config.log_file(value)
+        Client.config.log_file = value
         @log_file = value
       end
 
@@ -38,7 +60,7 @@ module Tamashii
       end
 
       def add_component(name, class_name, options = {},  &block)
-        self.components[name] = {class_name: class_name, options: options, block: block}  
+        self.components[name] = {class_name: class_name, options: options, block: block}
       end
 
       def remove_component(name)
@@ -47,6 +69,11 @@ module Tamashii
 
       def components
         @components ||= self.default_components.clone
+      end
+
+      def env(env = nil)
+        return Tamashii::Environment.new(self[:env]) if env.nil?
+        self.env = env.to_s
       end
     end
   end
