@@ -2,7 +2,6 @@ $LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
 require 'tempfile'
 require 'simplecov'
 require 'timecop'
-require 'byebug'
 
 SimpleCov.start do
   add_filter '/spec/'
@@ -12,8 +11,8 @@ end
 require "tamashii/agent"
 
 Tamashii::Agent.config do
-  log_file Tempfile.new.path
-  env "test"
+  log_file = Tempfile.new.path
+  env = "test"
 end
 
 RSpec::Matchers.define :event_with_type_is do |event_type|

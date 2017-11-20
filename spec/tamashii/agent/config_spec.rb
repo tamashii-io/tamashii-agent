@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'securerandom'
 
 RSpec.describe Tamashii::Agent::Config do
-  
+
   describe ".auth_type" do
     it "can be changed" do
       expect(subject.auth_type).to eq(:none)
@@ -21,7 +21,7 @@ RSpec.describe Tamashii::Agent::Config do
     it "can be changed" do
       new_token = SecureRandom.hex(16)
       expect(subject.token).to be_nil
-      subject.token(new_token)
+      subject.token = new_token
       expect(subject.token).to eq(new_token)
     end
   end
@@ -33,15 +33,15 @@ RSpec.describe Tamashii::Agent::Config do
 
     context "setter will also changes the value in Tamashii::Client" do
       before do
-        @old_client_log_file = Tamashii::Client::Config.log_file
+        @old_client_log_file = Tamashii::Client.config.log_file
       end
       after do
-        Tamashii::Client::Config.log_file = @old_client_log_file
+        Tamashii::Client.config.log_file = @old_client_log_file
       end
       it "has the same value as agent" do
         path = SecureRandom.hex(16)
         subject.log_file(path)
-        expect(Tamashii::Client::Config.log_file).to eq(path)
+        expect(Tamashii::Client.config.log_file).to eq(path)
       end
     end
   end
@@ -59,14 +59,14 @@ RSpec.describe Tamashii::Agent::Config do
 
     context "setter will also changes the value in Tamashii::Client" do
       before do
-        @old_client_log_level = Tamashii::Client::Config.log_level
+        @old_client_log_level = Tamashii::Client.config.log_level
       end
       after do
-        Tamashii::Client::Config.log_level = @old_client_log_level
+        Tamashii::Client.config.log_level(@old_client_log_level)
       end
       it "setter will also change the value in Tamashii::Client" do
         subject.log_level(Logger::INFO)
-        expect(Tamashii::Client::Config.log_level).to eq(Logger::INFO)
+        expect(Tamashii::Client.config.log_level).to eq(Logger::INFO)
       end
     end
   end
@@ -99,7 +99,7 @@ RSpec.describe Tamashii::Agent::Config do
   describe "forwarded methods: #{forward_methods.join(', ')}" do
     forward_methods.each do |method_name|
       it "forward the client-specific method #{method_name} calls to Tamashii::Client" do
-        expect(Tamashii::Client::Config).to receive(method_name)
+        expect(Tamashii::Client.config).to receive(method_name)
         subject.send(method_name)
       end
     end
